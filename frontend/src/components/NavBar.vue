@@ -1,12 +1,20 @@
 <script setup lang="ts">
 // NavBar 元件 - 磨砂玻璃效果導航列
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 // 滾動偵測門檻值 (px)
 const SCROLL_THRESHOLD_PX = 20
 
 const isScrolled = ref(false)
+const authStore = useAuthStore()
+const navItems = computed(() => [
+  { name: 'home', label: '首頁' },
+  { name: 'my-reviews', label: '我的評價' },
+  { name: 'my-level', label: '我的等級' },
+  { name: 'about', label: '關於我們' },
+])
 
 let ticking = false
 function handleScroll() {
@@ -26,6 +34,10 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
+
+function handleLogout() {
+  authStore.logout()
+}
 </script>
 
 <template>
@@ -36,22 +48,31 @@ onUnmounted(() => {
         <span class="navbar__title">NCU TLDR</span>
       </RouterLink>
       <div class="navbar__links" role="navigation" aria-label="主要導覽">
-        <RouterLink to="/" class="navbar__link" active-class="navbar__link--active">
-          首頁
+        <RouterLink
+          v-for="item in navItems"
+          :key="item.name"
+          :to="{ name: item.name }"
+          class="navbar__link"
+          active-class="navbar__link--active"
+        >
+          {{ item.label }}
         </RouterLink>
-        <a href="#" class="navbar__link" aria-label="我的評價" @click.prevent>我的評價</a>
-        <a href="#" class="navbar__link" aria-label="我的等級" @click.prevent>我的等級</a>
-        <a href="#" class="navbar__link" aria-label="我的寵物" @click.prevent>我的寵物</a>
-        <a href="#" class="navbar__link" aria-label="商城" @click.prevent>商城</a>
-        <a href="#" class="navbar__link" aria-label="關於我們" @click.prevent>關於我們</a>
       </div>
       <div class="navbar__actions">
-        <RouterLink to="/login" class="navbar__btn navbar__btn--ghost">
-          登入
-        </RouterLink>
-        <RouterLink to="/register" class="navbar__btn navbar__btn--primary">
-          註冊
-        </RouterLink>
+        <template v-if="authStore.isLoggedIn">
+          <span class="navbar__user">{{ authStore.displayName }}</span>
+          <button type="button" class="navbar__btn navbar__btn--ghost" @click="handleLogout">
+            登出
+          </button>
+        </template>
+        <template v-else>
+          <RouterLink :to="{ name: 'login' }" class="navbar__btn navbar__btn--ghost">
+            登入
+          </RouterLink>
+          <RouterLink :to="{ name: 'register' }" class="navbar__btn navbar__btn--primary">
+            註冊
+          </RouterLink>
+        </template>
       </div>
     </div>
   </nav>
@@ -146,6 +167,11 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+}
+
+.navbar__user {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
 }
 
 .navbar__btn {

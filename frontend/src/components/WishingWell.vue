@@ -1,18 +1,16 @@
 <script setup lang="ts">
 import type { WishCourse } from '@/types'
 // WishingWell 元件 - 許願池側邊欄
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import wishingWellImg from '@/assets/wishing_well_spritual_no_bg.png'
-import { mockWishList as initialWishList } from '@/mock/wishList'
+import { useWishStore } from '@/stores/useWishStore'
 import WishingWellFormToast from './WishingWellFormToast.vue'
 
 const emit = defineEmits<{
   selectCourse: [course: WishCourse]
 }>()
 
-// 許願池資料（來自 mock，未來可改為 store / API）
-const wishList = ref<WishCourse[]>([...initialWishList])
-
+const wishStore = useWishStore()
 const hoveredItem = ref<number | null>(null)
 const showWishForm = ref(false)
 
@@ -20,18 +18,14 @@ function handleSelectCourse(course: WishCourse) {
   emit('selectCourse', course)
 }
 
-function handleSubmitWish(payload: { name: string, teacher: string }) {
-  const maxId = wishList.value.reduce((currentMaxId, item) => Math.max(currentMaxId, item.id), 0)
-  wishList.value = [
-    ...wishList.value,
-    {
-      id: maxId + 1,
-      name: payload.name,
-      teacher: payload.teacher,
-    },
-  ]
+async function handleSubmitWish(payload: { name: string, teacher: string }) {
+  await wishStore.createWish(payload)
   showWishForm.value = false
 }
+
+onMounted(async () => {
+  await wishStore.fetchWishlist()
+})
 </script>
 
 <template>
@@ -52,7 +46,7 @@ function handleSubmitWish(payload: { name: string, teacher: string }) {
       <div class="wishing-well__body">
         <ul class="wishing-well__list">
           <li
-            v-for="(course, index) in wishList"
+            v-for="(course, index) in wishStore.sortedWishes"
             :key="course.id"
             class="wishing-well__item"
             :class="{ 'wishing-well__item--hovered': hoveredItem === course.id }"
@@ -65,6 +59,7 @@ function handleSubmitWish(payload: { name: string, teacher: string }) {
               <span class="wishing-well__course-name">{{ course.name }}</span>
               <span class="wishing-well__separator">-</span>
               <span class="wishing-well__teacher">{{ course.teacher }}</span>
+              <span v-if="course.voteCount" class="wishing-well__votes">({{ course.voteCount }} 人)</span>
             </div>
           </li>
         </ul>
@@ -212,6 +207,11 @@ function handleSubmitWish(payload: { name: string, teacher: string }) {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   font-weight: 400;
+}
+
+.wishing-well__votes {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
 }
 
 .wishing-well__add-btn {

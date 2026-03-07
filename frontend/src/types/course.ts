@@ -51,6 +51,8 @@ export interface CourseComment {
   likes: number
   /** 倒讚數 */
   dislikes: number
+  /** 評分資訊（可選，用於本地即時重算） */
+  ratings?: CourseRatings
 }
 
 export interface Course {
@@ -90,6 +92,8 @@ export interface WishCourse {
   name: string
   /** 授課教師 */
   teacher: string
+  /** 許願人數 */
+  voteCount?: number
 }
 
 /** 排序方向 */

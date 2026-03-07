@@ -153,4 +153,26 @@ describe('courseDetail', () => {
     const commentsComponent = wrapper.findComponent({ name: 'CourseComments' })
     expect(commentsComponent.props('comments')).toEqual([])
   })
+
+  it('re-emits submit review from AI summary', async () => {
+    const wrapper = mount(CourseDetail, {
+      props: { course: mockCourse },
+      global: {
+        stubs: {
+          RouterLink: true,
+        },
+      },
+    })
+    const aiSummary = wrapper.findComponent({ name: 'CourseAISummary' })
+    aiSummary.vm.$emit('submitReview', {
+      title: 't',
+      content: 'c',
+      ratings: { reward: 5, score: 4, easiness: 3, teacherStyle: 4 },
+      weeklyHours: '5h',
+      textbook: 'x',
+      semester: '114-1',
+    })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.emitted('submitReview')).toBeTruthy()
+  })
 })

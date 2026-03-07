@@ -5,12 +5,28 @@ import CourseAISummary from '@/components/CourseAISummary.vue'
 import CourseBasicInfo from '@/components/CourseBasicInfo.vue'
 import CourseComments from '@/components/CourseComments.vue'
 import CourseStarEvaluation from '@/components/CourseStarEvaluation.vue'
-import NavBar from '@/components/NavBar.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import { useSavedCourses } from '@/composables/useSavedCourses'
 
 const props = defineProps<{
   course: Course
+}>()
+const emit = defineEmits<{
+  submitReview: [
+    payload: {
+      title: string
+      content: string
+      ratings: {
+        reward: number
+        score: number
+        easiness: number
+        teacherStyle: number
+      }
+      weeklyHours: string
+      textbook: string
+      semester: string
+    },
+  ]
 }>()
 
 const { isSaved, toggleSave } = useSavedCourses()
@@ -24,12 +40,26 @@ function handleToggleSave() {
 function handleSearch(_query: string) {
   // Search functionality can be implemented here
 }
+
+function handleSubmitReview(payload: {
+  title: string
+  content: string
+  ratings: {
+    reward: number
+    score: number
+    easiness: number
+    teacherStyle: number
+  }
+  weeklyHours: string
+  textbook: string
+  semester: string
+}) {
+  emit('submitReview', payload)
+}
 </script>
 
 <template>
   <div class="course-detail-page">
-    <NavBar />
-
     <main class="cdp__main">
       <!-- 頂部列：課程標題 + 儲存按鈕 + 搜尋框 -->
       <div class="cdp__top-row">
@@ -76,7 +106,11 @@ function handleSearch(_query: string) {
 
         <!-- 右側欄：AI 摘要 + 留言 -->
         <div class="cdp__content">
-          <CourseAISummary :summary="course.summary" :course-name="course.name" />
+          <CourseAISummary
+            :summary="course.summary"
+            :course-name="course.name"
+            @submit-review="handleSubmitReview"
+          />
           <CourseComments :comments="course.comments ?? []" />
         </div>
       </div>

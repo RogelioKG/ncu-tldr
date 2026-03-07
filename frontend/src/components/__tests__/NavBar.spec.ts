@@ -1,11 +1,13 @@
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import NavBar from '../NavBar.vue'
 
 describe('navBar', () => {
-  it('renders brand title', () => {
-    const wrapper = mount(NavBar, {
+  function mountNavBar() {
+    return mount(NavBar, {
       global: {
+        plugins: [createPinia()],
         stubs: {
           RouterLink: {
             template: '<a><slot /></a>',
@@ -13,19 +15,15 @@ describe('navBar', () => {
         },
       },
     })
+  }
+
+  it('renders brand title', () => {
+    const wrapper = mountNavBar()
     expect(wrapper.text()).toContain('NCU TLDR')
   })
 
   it('renders navigation links', () => {
-    const wrapper = mount(NavBar, {
-      global: {
-        stubs: {
-          RouterLink: {
-            template: '<a><slot /></a>',
-          },
-        },
-      },
-    })
+    const wrapper = mountNavBar()
     expect(wrapper.text()).toContain('首頁')
     expect(wrapper.text()).toContain('我的評價')
     expect(wrapper.text()).toContain('我的等級')
@@ -33,25 +31,13 @@ describe('navBar', () => {
   })
 
   it('renders login and register buttons', () => {
-    const wrapper = mount(NavBar, {
-      global: {
-        stubs: {
-          RouterLink: true,
-        },
-      },
-    })
+    const wrapper = mountNavBar()
     expect(wrapper.text()).toContain('登入')
     expect(wrapper.text()).toContain('註冊')
   })
 
   it('applies scrolled class when scrolled', async () => {
-    const wrapper = mount(NavBar, {
-      global: {
-        stubs: {
-          RouterLink: true,
-        },
-      },
-    })
+    const wrapper = mountNavBar()
 
     // Simulate scroll
     Object.defineProperty(window, 'scrollY', { value: 50, writable: true })
@@ -62,27 +48,12 @@ describe('navBar', () => {
   })
 
   it('does not apply scrolled class when not scrolled', () => {
-    const wrapper = mount(NavBar, {
-      global: {
-        stubs: {
-          RouterLink: true,
-        },
-      },
-    })
+    const wrapper = mountNavBar()
     expect(wrapper.find('.navbar').classes()).not.toContain('navbar--scrolled')
   })
 
   it('renders RouterLink to home', () => {
-    const wrapper = mount(NavBar, {
-      global: {
-        stubs: {
-          RouterLink: {
-            template: '<a><slot /></a>',
-            props: ['to'],
-          },
-        },
-      },
-    })
+    const wrapper = mountNavBar()
     const brandLink = wrapper.find('.navbar__brand')
     expect(brandLink.exists()).toBe(true)
   })
