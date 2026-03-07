@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
-const isLoading = ref(false)
 const errorMsg = ref('')
 
 async function handleSubmit() {
@@ -16,17 +17,12 @@ async function handleSubmit() {
     return
   }
 
-  isLoading.value = true
   try {
-    // TODO: integrate with auth store / API
-    await new Promise(r => setTimeout(r, 800))
+    await authStore.loginWithPassword(email.value, password.value)
     router.push('/')
   }
   catch {
     errorMsg.value = '登入失敗，請確認帳號密碼'
-  }
-  finally {
-    isLoading.value = false
   }
 }
 </script>
@@ -85,9 +81,9 @@ async function handleSubmit() {
         <button
           type="submit"
           class="auth-form__submit"
-          :disabled="isLoading"
+          :disabled="authStore.isLoading"
         >
-          {{ isLoading ? '登入中...' : '登入' }}
+          {{ authStore.isLoading ? '登入中...' : '登入' }}
         </button>
       </form>
 

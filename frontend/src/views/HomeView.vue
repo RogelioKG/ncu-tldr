@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Course, SortCriterion, WishCourse } from '@/types'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import CourseFilterSort from '@/components/CourseFilterSort.vue'
 import CourseGrid from '@/components/CourseGrid.vue'
@@ -9,22 +9,16 @@ import SavedCoursesPanel from '@/components/SavedCoursesPanel.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import WishingWell from '@/components/WishingWell.vue'
 import { useSavedCourses } from '@/composables/useSavedCourses'
-import { mockCourses } from '@/mock/courses'
+import { useCourseStore } from '@/stores/useCourseStore'
 
 const router = useRouter()
 const { savedCourses: orderedSavedCourses, savedCourseIds } = useSavedCourses()
+const courseStore = useCourseStore()
 
-const courses = ref<Course[]>([...mockCourses])
-const searchQuery = ref('')
-
-// --- 排序（初始無任何條件，預設依課程 id 排序）---
-const sortCriteria = ref<SortCriterion[]>([
-  { field: 'overall', label: '綜合平均', direction: 'desc', enabled: false },
-  { field: 'reward', label: '收穫', direction: 'desc', enabled: false },
-  { field: 'score', label: '分數', direction: 'desc', enabled: false },
-  { field: 'easiness', label: '輕鬆', direction: 'desc', enabled: false },
-  { field: 'teacherStyle', label: '教師風格', direction: 'desc', enabled: false },
-])
+const sortCriteria = computed<SortCriterion[]>({
+  get: () => courseStore.sortCriteria,
+  set: value => courseStore.setSortCriteria(value),
+})
 
 // --- 分頁 ---
 const pageSize = ref(20)
@@ -33,36 +27,9 @@ const currentPage = ref(1)
 const sortedCourses = computed(() => {
   const ids = savedCourseIds.value
   const saved = orderedSavedCourses.value.filter(c =>
-    courses.value.some(mc => mc.id === c.id),
+    courseStore.filteredCourses.some(row => row.id === c.id),
   )
-
-  const unsaved = [...courses.value].filter(c => !ids.has(c.id))
-
-  const activeCriteria = sortCriteria.value.filter(c => c.enabled)
-
-  function sortValue(course: Course, field: SortCriterion['field']): number {
-    if (field === 'overall') {
-      const r = course.ratings
-      return (r.reward + r.score + r.easiness + r.teacherStyle) / 4
-    }
-    return course.ratings[field]
-  }
-
-  if (activeCriteria.length > 0) {
-    const compareFn = (a: Course, b: Course) => {
-      for (const criterion of activeCriteria) {
-        const valA = sortValue(a, criterion.field)
-        const valB = sortValue(b, criterion.field)
-        if (valA !== valB)
-          return criterion.direction === 'desc' ? valB - valA : valA - valB
-      }
-      return 0
-    }
-    unsaved.sort(compareFn)
-  }
-  else {
-    unsaved.sort((a, b) => a.id - b.id)
-  }
+  const unsaved = [...courseStore.filteredCourses].filter(c => !ids.has(c.id))
 
   return [...saved, ...unsaved]
 })
@@ -83,17 +50,24 @@ watch([sortCriteria, pageSize], () => {
   currentPage.value = 1
 }, { deep: true })
 
+watch(() => courseStore.searchQuery, () => {
+  currentPage.value = 1
+})
+
+onMounted(async () => {
+  await courseStore.fetchCourses()
+})
+
 function handleSelectCourse(course: Course) {
   router.push({ name: 'course-detail', params: { id: course.id } })
 }
 
 function handleSearch(query: string) {
-  searchQuery.value = query
-  // TODO: 實作搜尋邏輯
+  courseStore.setSearchQuery(query)
 }
 
 function handleWishCourseSelect(course: WishCourse) {
-  const found = courses.value.find(c => c.name === course.name)
+  const found = courseStore.courses.find(c => c.name === course.name)
   if (found) {
     handleSelectCourse(found)
   }

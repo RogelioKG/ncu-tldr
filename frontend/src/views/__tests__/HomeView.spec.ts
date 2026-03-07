@@ -1,5 +1,6 @@
 import type { Course } from '@/types'
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import HomeView from '../HomeView.vue'
@@ -25,45 +26,42 @@ describe('homeView', () => {
     })
   }
 
-  it('renders wishing well component', () => {
+  async function mountHomeView() {
     const router = createRouterMock()
-    const wrapper = mount(HomeView, {
-      global: {
-        plugins: [router],
-      },
-    })
+    await router.push('/')
+    await router.isReady()
+    return {
+      router,
+      wrapper: mount(HomeView, {
+        global: {
+          plugins: [router, createPinia()],
+        },
+      }),
+    }
+  }
+
+  it('renders wishing well component', async () => {
+    const { wrapper } = await mountHomeView()
+    await new Promise(resolve => setTimeout(resolve, 0))
     expect(wrapper.findComponent({ name: 'WishingWell' }).exists()).toBe(true)
   })
 
-  it('renders search bar', () => {
-    const router = createRouterMock()
-    const wrapper = mount(HomeView, {
-      global: {
-        plugins: [router],
-      },
-    })
+  it('renders search bar', async () => {
+    const { wrapper } = await mountHomeView()
+    await new Promise(resolve => setTimeout(resolve, 0))
     expect(wrapper.findComponent({ name: 'SearchBar' }).exists()).toBe(true)
   })
 
-  it('renders course grid', () => {
-    const router = createRouterMock()
-    const wrapper = mount(HomeView, {
-      global: {
-        plugins: [router],
-      },
-    })
+  it('renders course grid', async () => {
+    const { wrapper } = await mountHomeView()
+    await new Promise(resolve => setTimeout(resolve, 0))
     expect(wrapper.findComponent({ name: 'CourseGrid' }).exists()).toBe(true)
   })
 
   it('navigates to course detail when course is selected', async () => {
-    const router = createRouterMock()
-    const wrapper = mount(HomeView, {
-      global: {
-        plugins: [router],
-      },
-    })
-
+    const { router, wrapper } = await mountHomeView()
     const pushSpy = vi.spyOn(router, 'push')
+
     const courseGrid = wrapper.findComponent({ name: 'CourseGrid' })
     await courseGrid.vm.$emit('select-course', mockCourses[0])
 
@@ -74,31 +72,18 @@ describe('homeView', () => {
   })
 
   it('handles search event', async () => {
-    const router = createRouterMock()
-    const wrapper = mount(HomeView, {
-      global: {
-        plugins: [router],
-      },
-    })
-
+    const { wrapper } = await mountHomeView()
     const searchBar = wrapper.findComponent({ name: 'SearchBar' })
     await searchBar.vm.$emit('search', '資料結構')
-    // Search functionality is TODO, just verify no errors
     expect(wrapper.exists()).toBe(true)
   })
 
   it('handles wish course selection', async () => {
-    const router = createRouterMock()
-    const wrapper = mount(HomeView, {
-      global: {
-        plugins: [router],
-      },
-    })
-
+    const { router, wrapper } = await mountHomeView()
     const pushSpy = vi.spyOn(router, 'push')
-    const wishingWell = wrapper.findComponent({ name: 'WishingWell' })
+    await new Promise(resolve => setTimeout(resolve, 0))
 
-    // Emit a wish course that matches a course in the list (id: 1 is 演算法)
+    const wishingWell = wrapper.findComponent({ name: 'WishingWell' })
     await wishingWell.vm.$emit('select-course', {
       id: 1,
       name: '演算法',

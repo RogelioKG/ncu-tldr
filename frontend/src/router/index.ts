@@ -25,6 +25,21 @@ const routes: RouteRecordRaw[] = [
     name: 'register',
     component: () => import('../views/RegisterView.vue'),
   },
+  {
+    path: '/my-reviews',
+    name: 'my-reviews',
+    component: () => import('../views/MyReviewsView.vue'),
+  },
+  {
+    path: '/my-level',
+    name: 'my-level',
+    component: () => import('../views/MyLevelView.vue'),
+  },
+  {
+    path: '/about',
+    name: 'about',
+    component: () => import('../views/AboutView.vue'),
+  },
 ]
 
 const router = createRouter({

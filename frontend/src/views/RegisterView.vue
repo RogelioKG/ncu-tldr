@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const isLoading = ref(false)
 const errorMsg = ref('')
 
 async function handleSubmit() {
@@ -36,23 +37,22 @@ async function handleSubmit() {
     errorMsg.value = '密碼需包含至少一個特殊符號、一個大寫字母、一個小寫字母及一個數字'
     return
   }
-  
-  if (password.value.length < 6) {
+
+  if (password.value.length < 8) {
     errorMsg.value = '密碼長度至少需要 8 個字元'
     return
   }
 
-  isLoading.value = true
   try {
-    // TODO: integrate with auth store / API
-    await new Promise(r => setTimeout(r, 800))
+    await authStore.registerWithPassword(
+      email.value,
+      password.value,
+      email.value.split('@')[0],
+    )
     router.push('/login')
   }
   catch {
     errorMsg.value = '註冊失敗，請稍後再試'
-  }
-  finally {
-    isLoading.value = false
   }
 }
 </script>
@@ -120,9 +120,9 @@ async function handleSubmit() {
         <button
           type="submit"
           class="auth-form__submit"
-          :disabled="isLoading"
+          :disabled="authStore.isLoading"
         >
-          {{ isLoading ? '註冊中...' : '建立帳號' }}
+          {{ authStore.isLoading ? '註冊中...' : '建立帳號' }}
         </button>
       </form>
 
