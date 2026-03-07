@@ -45,10 +45,11 @@ async function handleSubmit() {
   }
 
   try {
+    const studentId = email.value.split('@')[0] ?? ''
     await authStore.registerWithPassword(
       email.value,
       password.value,
-      email.value.split('@')[0],
+      studentId,
     )
     router.push('/login')
   }
