@@ -19,8 +19,11 @@ services:
   backend:
     build:
       context: ./backend
-      target: development
     restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/ncu_tldr
     depends_on:
@@ -32,6 +35,11 @@ services:
       context: ./frontend
       target: development
     restart: unless-stopped
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
 
