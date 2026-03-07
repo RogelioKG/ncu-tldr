@@ -23,7 +23,7 @@ export interface RegisterPayload extends LoginPayload {
 }
 
 const mockUsers = new Map<string, { id: number, password: string, displayName: string }>([
-  ['demo@ncu.edu.tw', { id: 1, password: 'password123', displayName: 'Demo User' }],
+  ['demo@cc.ncu.edu.tw', { id: 1, password: 'password123', displayName: 'Demo User' }],
 ])
 
 export async function login(payload: LoginPayload): Promise<AuthResult> {

@@ -130,9 +130,9 @@ class MockDB:
             },
         ]
         self._users: dict[str, dict] = {
-            "demo@ncu.edu.tw": {
+            "demo@cc.ncu.edu.tw": {
                 "id": 1,
-                "email": "demo@ncu.edu.tw",
+                "email": "demo@cc.ncu.edu.tw",
                 "displayName": "Demo User",
                 "password": "password123",
                 "isActive": True,

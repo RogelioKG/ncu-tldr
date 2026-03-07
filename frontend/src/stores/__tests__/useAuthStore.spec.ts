@@ -21,14 +21,14 @@ describe('useAuthStore', () => {
       tokenType: 'bearer',
       user: {
         id: 1,
-        email: 'demo@ncu.edu.tw',
+        email: 'demo@cc.ncu.edu.tw',
         displayName: 'Demo',
         isActive: true,
       },
     })
 
     const store = useAuthStore()
-    await store.loginWithPassword('demo@ncu.edu.tw', 'password123')
+    await store.loginWithPassword('demo@cc.ncu.edu.tw', 'password123')
     expect(store.isLoggedIn).toBe(true)
     expect(localStorage.getItem('ncu-tldr-token')).toBe('mock-token')
   })
