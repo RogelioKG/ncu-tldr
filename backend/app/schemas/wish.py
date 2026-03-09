@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class WishCreate(BaseModel):
@@ -7,7 +7,9 @@ class WishCreate(BaseModel):
 
 
 class WishCourse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     id: int
     name: str
     teacher: str
-    voteCount: int = 1
+    voteCount: int = Field(default=1, alias="voteCount")

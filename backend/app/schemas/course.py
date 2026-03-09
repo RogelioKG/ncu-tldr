@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
 
 from app.schemas.common import CourseRatings
@@ -33,3 +35,12 @@ class Course(BaseModel):
     type: str | None = None
     summary: CourseSummary | None = None
     comments: list[Review] = Field(default_factory=list)
+
+
+class CoursePair(BaseModel):
+    courseName: str
+    teacher: str
+
+
+class CoursePairsResponse(BaseModel):
+    pairs: list[CoursePair]

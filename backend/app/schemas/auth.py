@@ -13,7 +13,7 @@ class RegisterRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: int
+    id: str
     email: EmailStr
     displayName: str
     isActive: bool = True
