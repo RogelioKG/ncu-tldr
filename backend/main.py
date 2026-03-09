@@ -2,7 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import auth_router, courses_router, reviews_router, wishlist_router
+from app.routers import (
+    auth_router,
+    comments_router,
+    courses_router,
+    reviews_router,
+    wishlist_router,
+)
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 app.add_middleware(
@@ -15,6 +21,7 @@ app.add_middleware(
 
 app.include_router(courses_router, prefix="/api")
 app.include_router(reviews_router, prefix="/api")
+app.include_router(comments_router, prefix="/api")
 app.include_router(wishlist_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 
