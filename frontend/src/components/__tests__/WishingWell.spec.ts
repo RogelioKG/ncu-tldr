@@ -1,9 +1,25 @@
 import { mount } from '@vue/test-utils'
-import { createPinia } from 'pinia'
-import { describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
+import { mockWishList } from '@/mock/wishList'
+import { useWishStore } from '@/stores/useWishStore'
 import WishingWell from '../WishingWell.vue'
 import WishingWellFormToast from '../WishingWellFormToast.vue'
+
+vi.mock('@/api/wishlist', async (importOriginal) => {
+  const mod = await importOriginal() as typeof import('@/api/wishlist')
+  return {
+    ...mod,
+    getWishlist: vi.fn().mockResolvedValue(mockWishList.map(row => ({ ...row, voteCount: 1 }))),
+    addWish: vi.fn().mockResolvedValue({
+      id: 999,
+      name: '雲端原生應用',
+      teacher: '王小明',
+      voteCount: 1,
+    }),
+  }
+})
 
 describe('wishingWell', () => {
   async function mountWishingWell() {
@@ -80,16 +96,26 @@ describe('wishingWell', () => {
   })
 
   it('adds a new wish item after toast form submit', async () => {
-    const wrapper = await mountWishingWell()
+    const pinia = createPinia()
+    const wrapper = mount(WishingWell, {
+      global: {
+        plugins: [pinia],
+      },
+    })
+    await nextTick()
+    await vi.waitFor(() => {
+      expect(wrapper.findAll('.wishing-well__item').length).toBe(mockWishList.length)
+    }, { timeout: 2000 })
     const originalItemCount = wrapper.findAll('.wishing-well__item').length
 
     await wrapper.get('.wishing-well__add-btn').trigger('click')
-    wrapper.getComponent(WishingWellFormToast).vm.$emit('submit', {
+    setActivePinia(pinia)
+    const wishStore = useWishStore()
+    await wishStore.createWish({
       name: '雲端原生應用',
       teacher: '王小明',
     })
     await nextTick()
-    await new Promise(resolve => setTimeout(resolve, 0))
 
     const items = wrapper.findAll('.wishing-well__item')
     expect(items.length).toBe(originalItemCount + 1)

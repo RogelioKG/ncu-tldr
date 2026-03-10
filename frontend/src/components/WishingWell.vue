@@ -18,9 +18,8 @@ function handleSelectCourse(course: WishCourse) {
   emit('selectCourse', course)
 }
 
-async function handleSubmitWish(payload: { name: string, teacher: string }) {
-  await wishStore.createWish(payload)
-  showWishForm.value = false
+function handleSubmitWish(_payload: { name: string, teacher: string }) {
+  /* Form handles createWish and shows success/failure; emit kept for optional parent side effects */
 }
 
 onMounted(async () => {
