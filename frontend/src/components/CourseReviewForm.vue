@@ -8,6 +8,21 @@ defineProps<{
 
 const emit = defineEmits<{
   close: []
+  submit: [
+    payload: {
+      title: string
+      content: string
+      ratings: {
+        reward: number
+        score: number
+        easiness: number
+        teacherStyle: number
+      }
+      weeklyHours: string
+      textbook: string
+      semester: string
+    },
+  ]
 }>()
 
 const form = reactive({
@@ -71,8 +86,28 @@ function handleSliderInput() {
 }
 
 function handleSubmit() {
-  if (!canSubmit.value)
+  if (!canSubmit.value) {
     return
+  }
+  const normalizedComment = form.comment.trim()
+  const generatedContent = normalizedComment || [
+    `修課學期：${form.semester}`,
+    `每週投入：約 ${weeklyHoursLabel.value}`,
+    `教材：${form.textbook.trim() || '未填寫'}`,
+  ].join('；')
+  emit('submit', {
+    title: `[${form.semester}] ${courseName}`,
+    content: generatedContent,
+    ratings: {
+      reward: form.reward,
+      score: form.score,
+      easiness: form.easiness,
+      teacherStyle: form.teacherStyle,
+    },
+    weeklyHours: weeklyHoursLabel.value,
+    textbook: form.textbook.trim(),
+    semester: form.semester,
+  })
   submitted.value = true
 }
 
@@ -131,7 +166,9 @@ function handleOverlayClick(e: MouseEvent) {
                     <span v-if="form.semester !== ''" class="review-toast__check">✓</span>
                   </legend>
                   <select v-model="form.semester" class="review-toast__select" aria-label="修課年份" required>
-                    <option value="">請選擇修課學期</option>
+                    <option value="">
+                      請選擇修課學期
+                    </option>
                     <option v-for="semester in semesterOptions" :key="semester" :value="semester">
                       {{ semester }}
                     </option>

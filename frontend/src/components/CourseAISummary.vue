@@ -9,7 +9,41 @@ defineProps<{
   courseName?: string
 }>()
 
+const emit = defineEmits<{
+  submitReview: [
+    payload: {
+      title: string
+      content: string
+      ratings: {
+        reward: number
+        score: number
+        easiness: number
+        teacherStyle: number
+      }
+      weeklyHours: string
+      textbook: string
+      semester: string
+    },
+  ]
+}>()
+
 const showReviewForm = ref(false)
+
+function handleSubmitReview(payload: {
+  title: string
+  content: string
+  ratings: {
+    reward: number
+    score: number
+    easiness: number
+    teacherStyle: number
+  }
+  weeklyHours: string
+  textbook: string
+  semester: string
+}) {
+  emit('submitReview', payload)
+}
 </script>
 
 <template>
@@ -21,6 +55,9 @@ const showReviewForm = ref(false)
       <p class="ai-summary__source">
         以下統整來自 {{ summary.reviewCount }} 則評價
       </p>
+      <button class="ai-summary__action-btn" type="button" @click="showReviewForm = true">
+        撰寫評價
+      </button>
     </header>
 
     <div class="ai-summary__body">
@@ -85,8 +122,16 @@ const showReviewForm = ref(false)
       v-if="showReviewForm"
       :course-name="courseName ?? ''"
       @close="showReviewForm = false"
+      @submit="handleSubmitReview"
     />
   </section>
+
+  <CourseReviewForm
+    v-if="summary && showReviewForm"
+    :course-name="courseName ?? ''"
+    @close="showReviewForm = false"
+    @submit="handleSubmitReview"
+  />
 </template>
 
 <style scoped>
@@ -117,6 +162,21 @@ const showReviewForm = ref(false)
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   margin-top: 4px;
+}
+
+.ai-summary__action-btn {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--radius-full);
+  background: var(--color-accent-primary);
+  color: white;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.ai-summary__action-btn:hover {
+  background: var(--color-text-primary);
 }
 
 .ai-summary__body {

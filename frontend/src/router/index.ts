@@ -15,6 +15,31 @@ const routes: RouteRecordRaw[] = [
     component: CourseDetailView,
     props: true,
   },
+  {
+    path: '/login',
+    name: 'login',
+    component: () => import('../views/LoginView.vue'),
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import('../views/RegisterView.vue'),
+  },
+  {
+    path: '/my-reviews',
+    name: 'my-reviews',
+    component: () => import('../views/MyReviewsView.vue'),
+  },
+  {
+    path: '/my-level',
+    name: 'my-level',
+    component: () => import('../views/PointsShopView.vue'),
+  },
+  {
+    path: '/about',
+    name: 'about',
+    component: () => import('../views/AboutView.vue'),
+  },
 ]
 
 const router = createRouter({

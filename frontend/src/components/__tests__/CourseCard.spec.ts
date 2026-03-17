@@ -31,12 +31,16 @@ describe('courseCard', () => {
     expect(wrapper.text()).toContain('教師：王小明')
   })
 
-  it('calculates average rating correctly', () => {
+  it('renders ratings section with four categories', () => {
     const wrapper = mount(CourseCard, {
       props: { course: mockCourse },
     })
-    const avgRating = ((4.5 + 4.0 + 3.5 + 4.2) / 4).toFixed(1)
-    expect(wrapper.text()).toContain(`${avgRating} ⭐`)
+    const ratingsEl = wrapper.find('.course-card__ratings')
+    expect(ratingsEl.exists()).toBe(true)
+    expect(wrapper.text()).toContain('收穫')
+    expect(wrapper.text()).toContain('分數')
+    expect(wrapper.text()).toContain('輕鬆')
+    expect(wrapper.text()).toContain('教師風格')
   })
 
   it('renders tags', () => {

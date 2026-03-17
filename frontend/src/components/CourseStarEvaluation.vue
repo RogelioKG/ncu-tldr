@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import type { CourseRatings } from '@/types'
 import { computed } from 'vue'
-
-interface RatingMetric {
-  label: string
-  value: number
-}
+import StarRating from './StarRating.vue'
 
 const props = defineProps<{
   ratings: CourseRatings
@@ -20,17 +16,6 @@ const overallRating = computed(() => {
   const weighted = reward * 0.35 + score * 0.2 + easiness * 0.15 + teacherStyle * 0.3
   return Number(clampRating(weighted).toFixed(1))
 })
-
-const ratingMetrics = computed<RatingMetric[]>(() => [
-  { label: '收穫', value: clampRating(props.ratings.reward) },
-  { label: '分數', value: clampRating(props.ratings.score) },
-  { label: '輕鬆', value: clampRating(props.ratings.easiness) },
-  { label: '教師風格', value: clampRating(props.ratings.teacherStyle) },
-])
-
-function getBarWidth(value: number): string {
-  return `${(value / 5) * 100}%`
-}
 </script>
 
 <template>
@@ -51,22 +36,28 @@ function getBarWidth(value: number): string {
       經使用者可信度加權平均
     </p>
 
-    <ul class="rating-card__metrics" aria-label="評分細項">
-      <li
-        v-for="metric in ratingMetrics"
-        :key="metric.label"
-        class="rating-card__metric"
-      >
-        <span class="rating-card__metric-label">{{ metric.label }}</span>
-        <div class="rating-card__bar" role="presentation">
-          <span
-            class="rating-card__bar-fill"
-            :style="{ width: getBarWidth(metric.value) }"
-          />
-        </div>
-        <span class="rating-card__metric-star" aria-hidden="true">★</span>
-      </li>
-    </ul>
+    <div class="rating-card__metrics" aria-label="評分細項">
+      <StarRating
+        :rating="ratings.reward"
+        label="收穫"
+        size="sm"
+      />
+      <StarRating
+        :rating="ratings.score"
+        label="分數"
+        size="sm"
+      />
+      <StarRating
+        :rating="ratings.easiness"
+        label="輕鬆"
+        size="sm"
+      />
+      <StarRating
+        :rating="ratings.teacherStyle"
+        label="教師風格"
+        size="sm"
+      />
+    </div>
   </section>
 </template>
 
@@ -135,42 +126,9 @@ function getBarWidth(value: number): string {
 
 .rating-card__metrics {
   margin-top: var(--spacing-lg);
-  display: grid;
-  gap: var(--spacing-sm);
-}
-
-.rating-card__metric {
-  display: grid;
-  grid-template-columns: 56px 1fr auto;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  column-gap: var(--spacing-sm);
-}
-
-.rating-card__metric-label {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-}
-
-.rating-card__bar {
-  height: 14px;
-  width: 100%;
-  border-radius: var(--radius-full);
-  background: #e6e6e8;
-  overflow: hidden;
-}
-
-.rating-card__bar-fill {
-  display: block;
-  height: 100%;
-  border-radius: var(--radius-full);
-  background: linear-gradient(90deg, #6abfd0 0%, #6cb9cb 100%);
-}
-
-.rating-card__metric-star {
-  color: #f3b544;
-  font-size: 20px;
-  line-height: 1;
+  gap: var(--spacing-xs);
 }
 </style>

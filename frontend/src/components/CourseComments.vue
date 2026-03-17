@@ -1,29 +1,61 @@
 <script setup lang="ts">
 import type { CourseComment } from '@/types'
 import { computed, ref } from 'vue'
+import { buildCommentTree } from '@/types'
 
 const props = defineProps<{
   comments: CourseComment[]
 }>()
 
+const emit = defineEmits<{
+  reply: [{ parentId: number, content: string }]
+}>()
+
 type SortMode = 'date' | 'popular'
 const sortMode = ref<SortMode>('date')
-
 const newComment = ref('')
+const replyingToId = ref<number | null>(null)
+const replyInput = ref('')
 
-const sortedComments = computed(() => {
-  const list = [...props.comments]
-  if (sortMode.value === 'date') {
-    return list.sort((a, b) => b.date.localeCompare(a.date))
-  }
-  return list.sort((a, b) => (b.likes - b.dislikes) - (a.likes - a.dislikes))
-})
+function sortByDate(a: CourseComment, b: CourseComment) {
+  return b.date.localeCompare(a.date)
+}
+function sortByPopular(a: CourseComment, b: CourseComment) {
+  return (b.likes - b.dislikes) - (a.likes - a.dislikes)
+}
+
+const commentTree = computed(() =>
+  buildCommentTree(
+    [...props.comments],
+    sortByDate,
+    sortByPopular,
+    sortMode.value,
+  ),
+)
 
 function submitComment() {
   if (!newComment.value.trim())
     return
-  // TODO: 接 API 送出留言
+  // TODO: 接 API 送出根留言
   newComment.value = ''
+}
+
+function startReply(commentId: number) {
+  replyingToId.value = commentId
+  replyInput.value = ''
+}
+
+function cancelReply() {
+  replyingToId.value = null
+  replyInput.value = ''
+}
+
+function submitReply() {
+  if (replyingToId.value == null || !replyInput.value.trim())
+    return
+  emit('reply', { parentId: replyingToId.value, content: replyInput.value.trim() })
+  replyingToId.value = null
+  replyInput.value = ''
 }
 </script>
 
@@ -54,32 +86,95 @@ function submitComment() {
       </div>
     </header>
 
-    <!-- 留言列表 -->
-    <ul v-if="sortedComments.length" class="comments__list">
-      <li
-        v-for="comment in sortedComments"
-        :key="comment.id"
-        class="comments__item"
-      >
-        <div class="comments__item-top">
-          <div class="comments__user-row">
-            <span class="comments__avatar">👤</span>
-            <span class="comments__user">{{ comment.user }}：{{ comment.title }}</span>
+    <!-- 留言列表（樹狀） -->
+    <ul v-if="commentTree.length" class="comments__list">
+      <template v-for="node in commentTree" :key="node.root.id">
+        <!-- 根留言 -->
+        <li class="comments__item">
+          <div class="comments__item-top">
+            <div class="comments__user-row">
+              <span class="comments__avatar">👤</span>
+              <span class="comments__user">{{ node.root.user }}：{{ node.root.title }}</span>
+            </div>
+            <span class="comments__date">({{ node.root.date }})</span>
           </div>
-          <span class="comments__date">({{ comment.date }})</span>
-        </div>
-        <p class="comments__content">
-          {{ comment.content }}
-        </p>
-        <div class="comments__actions">
-          <button type="button" class="comments__vote-btn" aria-label="按讚">
-            👍 <span v-if="comment.likes">{{ comment.likes }}</span>
-          </button>
-          <button type="button" class="comments__vote-btn" aria-label="倒讚">
-            👎 <span v-if="comment.dislikes">{{ comment.dislikes }}</span>
-          </button>
-        </div>
-      </li>
+          <p class="comments__content">
+            {{ node.root.content }}
+          </p>
+          <div class="comments__actions">
+            <button type="button" class="comments__vote-btn" aria-label="按讚">
+              👍 <span v-if="node.root.likes">{{ node.root.likes }}</span>
+            </button>
+            <button type="button" class="comments__vote-btn" aria-label="倒讚">
+              👎 <span v-if="node.root.dislikes">{{ node.root.dislikes }}</span>
+            </button>
+            <button
+              type="button"
+              class="comments__reply-btn"
+              aria-label="回覆"
+              @click="startReply(node.root.id)"
+            >
+              回覆
+            </button>
+          </div>
+        </li>
+        <!-- 回覆（同縮排） -->
+        <li
+          v-for="reply in node.replies"
+          :key="reply.id"
+          class="comments__item comments__item--reply"
+        >
+          <div class="comments__item-top">
+            <div class="comments__user-row">
+              <span class="comments__avatar">👤</span>
+              <span class="comments__user">{{ reply.user }}：{{ reply.title }}</span>
+            </div>
+            <span class="comments__date">({{ reply.date }})</span>
+          </div>
+          <p class="comments__content">
+            {{ reply.content }}
+          </p>
+          <div class="comments__actions">
+            <button type="button" class="comments__vote-btn" aria-label="按讚">
+              👍 <span v-if="reply.likes">{{ reply.likes }}</span>
+            </button>
+            <button type="button" class="comments__vote-btn" aria-label="倒讚">
+              👎 <span v-if="reply.dislikes">{{ reply.dislikes }}</span>
+            </button>
+          </div>
+        </li>
+        <!-- 回覆輸入框（inline） -->
+        <li
+          v-if="replyingToId === node.root.id"
+          class="comments__reply-form"
+        >
+          <input
+            v-model="replyInput"
+            type="text"
+            class="comments__input"
+            placeholder="回覆此留言..."
+            @keydown.enter="submitReply"
+            @keydown.esc="cancelReply"
+          >
+          <div class="comments__reply-actions">
+            <button
+              type="button"
+              class="comments__submit-btn"
+              :disabled="!replyInput.trim()"
+              @click="submitReply"
+            >
+              發布
+            </button>
+            <button
+              type="button"
+              class="comments__cancel-btn"
+              @click="cancelReply"
+            >
+              取消
+            </button>
+          </div>
+        </li>
+      </template>
     </ul>
 
     <!-- 無留言 -->
@@ -87,7 +182,7 @@ function submitComment() {
       目前尚無留言，成為第一個分享心得的人吧！
     </p>
 
-    <!-- 留言輸入框 -->
+    <!-- 根留言輸入框 -->
     <div class="comments__input-row">
       <input
         v-model="newComment"
@@ -179,6 +274,37 @@ function submitComment() {
   box-shadow: var(--shadow-sm);
 }
 
+.comments__item--reply {
+  margin-left: var(--reply-indent, 2rem);
+}
+
+.comments__reply-form {
+  margin-left: var(--reply-indent, 2rem);
+  padding: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.comments__reply-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.comments__cancel-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-background-alt);
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.comments__cancel-btn:hover {
+  border-color: var(--color-text-muted);
+}
+
 .comments__item-top {
   display: flex;
   align-items: center;
@@ -222,7 +348,8 @@ function submitComment() {
   margin-top: var(--spacing-xs);
 }
 
-.comments__vote-btn {
+.comments__vote-btn,
+.comments__reply-btn {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -234,7 +361,8 @@ function submitComment() {
   transition: all var(--transition-fast);
 }
 
-.comments__vote-btn:hover {
+.comments__vote-btn:hover,
+.comments__reply-btn:hover {
   background: var(--color-accent-primary);
   color: white;
 }

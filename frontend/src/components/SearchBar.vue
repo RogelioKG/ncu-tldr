@@ -9,9 +9,15 @@ const searchQuery = ref('')
 const isFocused = ref(false)
 
 function handleSearch() {
-  if (searchQuery.value.trim()) {
-    emit('search', searchQuery.value.trim())
+  const query = searchQuery.value.trim()
+  if (query) {
+    emit('search', query)
   }
+}
+
+function handleClear() {
+  searchQuery.value = ''
+  emit('search', '')
 }
 
 function handleKeydown(e: KeyboardEvent) {
@@ -52,7 +58,7 @@ function handleKeydown(e: KeyboardEvent) {
       type="button"
       class="search-bar__clear"
       aria-label="清除搜尋內容"
-      @click="searchQuery = ''"
+      @click="handleClear"
     >
       <svg
         width="16"

@@ -54,6 +54,8 @@ class User(Base):
 
     wishes: Mapped[list["Wish"]] = relationship(back_populates="creator")  # type: ignore[name-defined]  # noqa: F821
     wish_votes: Mapped[list["WishVote"]] = relationship(back_populates="user")  # type: ignore[name-defined]  # noqa: F821
+    comments: Mapped[list["Comment"]] = relationship(back_populates="user")  # type: ignore[name-defined]  # noqa: F821
+    comment_votes: Mapped[list["CommentVote"]] = relationship(back_populates="user")  # type: ignore[name-defined]  # noqa: F821
 
     __table_args__ = (
         CheckConstraint(

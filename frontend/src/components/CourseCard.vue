@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Course } from '@/types'
-// CourseCard 元件 - 課程卡片（內容同 CourseDetail，右上角保留平均星星）
+// CourseCard 元件 - 課程卡片（內容同 CourseDetail）
 import { computed, ref } from 'vue'
 import { useSavedCourses } from '@/composables/useSavedCourses'
 import StarRating from './StarRating.vue'
@@ -26,11 +26,6 @@ function handleToggleSave(e: Event) {
   e.stopPropagation()
   toggleSave(props.course.id)
 }
-
-const averageRating = computed(() => {
-  const { reward, score, easiness, teacherStyle } = props.course.ratings
-  return ((reward + score + easiness + teacherStyle) / 4).toFixed(1)
-})
 
 const displayCourseName = computed(() => {
   const name = props.course.name
@@ -63,7 +58,6 @@ function handleClick() {
         >
           {{ saved ? '⚑' : '⚐' }}
         </button>
-        <span class="course-card__rating">{{ averageRating }} ⭐</span>
       </div>
       <header class="course-card__header">
         <h2 class="course-card__title">
@@ -175,13 +169,6 @@ function handleClick() {
 
 .course-card__save-btn--active {
   color: var(--color-accent-primary);
-}
-
-.course-card__rating {
-  font-size: var(--font-size-xs);
-  color: var(--color-star-filled);
-  font-weight: 500;
-  white-space: nowrap;
 }
 
 .course-card__header {

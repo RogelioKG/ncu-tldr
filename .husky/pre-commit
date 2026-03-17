@@ -19,7 +19,9 @@ if git diff --cached --name-only | grep -q "^backend/"; then
     print_msg "$BLUE" "🔄 [Backend] Checking..."
     cd backend
 
-    # 1. Lint & Format Check
+    # 1. Auto-fix format then Lint & Format Check
+    uv run ruff format .
+    git add -u .
     uv run ruff check .
     uv run ruff format --check .
 

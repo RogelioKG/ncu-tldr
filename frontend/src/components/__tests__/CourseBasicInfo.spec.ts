@@ -9,7 +9,7 @@ const mockCourse: Course = {
   teacher: '王小明',
   tags: ['必修'],
   ratings: { reward: 4.5, score: 4.0, easiness: 3.5, teacherStyle: 4.2 },
-  schoolDept: '資訊工程學系',
+  department: '資訊工程學系',
   code: 'CS101',
   time: '週一 3-4',
   credits: 3,

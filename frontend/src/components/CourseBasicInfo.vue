@@ -15,7 +15,7 @@ defineProps<{
     <div class="basic-info__cards">
       <div class="basic-info__card">
         <span class="basic-info__label">系所：</span>
-        <span class="basic-info__value">{{ course.schoolDept ?? '—' }}</span>
+        <span class="basic-info__value">{{ course.department ?? '—' }}</span>
       </div>
       <div class="basic-info__card">
         <span class="basic-info__label">課號：</span>

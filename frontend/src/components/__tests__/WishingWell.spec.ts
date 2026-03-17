@@ -1,23 +1,50 @@
 import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
+import { mockWishList } from '@/mock/wishList'
+import { useWishStore } from '@/stores/useWishStore'
 import WishingWell from '../WishingWell.vue'
 import WishingWellFormToast from '../WishingWellFormToast.vue'
 
+vi.mock('@/api/wishlist', async (importOriginal) => {
+  const mod = await importOriginal() as typeof import('@/api/wishlist')
+  return {
+    ...mod,
+    getWishlist: vi.fn().mockResolvedValue(mockWishList.map(row => ({ ...row, voteCount: 1 }))),
+    addWish: vi.fn().mockResolvedValue({
+      id: 999,
+      name: '雲端原生應用',
+      teacher: '王小明',
+      voteCount: 1,
+    }),
+  }
+})
+
 describe('wishingWell', () => {
-  it('renders title', () => {
-    const wrapper = mount(WishingWell)
+  async function mountWishingWell() {
+    const wrapper = mount(WishingWell, {
+      global: {
+        plugins: [createPinia()],
+      },
+    })
+    await nextTick()
+    return wrapper
+  }
+
+  it('renders title', async () => {
+    const wrapper = await mountWishingWell()
     expect(wrapper.text()).toContain('許願池')
   })
 
-  it('renders wish list items', () => {
-    const wrapper = mount(WishingWell)
+  it('renders wish list items', async () => {
+    const wrapper = await mountWishingWell()
     const items = wrapper.findAll('.wishing-well__item')
     expect(items.length).toBeGreaterThan(0)
   })
 
-  it('renders course names and teachers', () => {
-    const wrapper = mount(WishingWell)
+  it('renders course names and teachers', async () => {
+    const wrapper = await mountWishingWell()
     const items = wrapper.findAll('.wishing-well__item')
     items.forEach((item) => {
       expect(item.find('.wishing-well__course-name').exists()).toBe(true)
@@ -25,8 +52,8 @@ describe('wishingWell', () => {
     })
   })
 
-  it('renders item numbers', () => {
-    const wrapper = mount(WishingWell)
+  it('renders item numbers', async () => {
+    const wrapper = await mountWishingWell()
     const numbers = wrapper.findAll('.wishing-well__number')
     numbers.forEach((num, idx) => {
       expect(num.text()).toBe(`${idx + 1}.`)
@@ -34,14 +61,14 @@ describe('wishingWell', () => {
   })
 
   it('applies hover class on mouseenter', async () => {
-    const wrapper = mount(WishingWell)
+    const wrapper = await mountWishingWell()
     const firstItem = wrapper.find('.wishing-well__item')
     await firstItem.trigger('mouseenter')
     expect(firstItem.classes()).toContain('wishing-well__item--hovered')
   })
 
   it('removes hover class on mouseleave', async () => {
-    const wrapper = mount(WishingWell)
+    const wrapper = await mountWishingWell()
     const firstItem = wrapper.find('.wishing-well__item')
     await firstItem.trigger('mouseenter')
     await firstItem.trigger('mouseleave')
@@ -49,31 +76,42 @@ describe('wishingWell', () => {
   })
 
   it('emits select-course event when item is clicked', async () => {
-    const wrapper = mount(WishingWell)
+    const wrapper = await mountWishingWell()
     const firstItem = wrapper.find('.wishing-well__item')
     await firstItem.trigger('click')
     expect(wrapper.emitted('selectCourse')).toBeTruthy()
   })
 
-  it('renders add button with image', () => {
-    const wrapper = mount(WishingWell)
+  it('renders add button with image', async () => {
+    const wrapper = await mountWishingWell()
     const addBtn = wrapper.find('.wishing-well__add-btn')
     expect(addBtn.exists()).toBe(true)
     expect(addBtn.find('img').exists()).toBe(true)
   })
 
   it('opens wishing well form toast when add button is clicked', async () => {
-    const wrapper = mount(WishingWell)
+    const wrapper = await mountWishingWell()
     await wrapper.get('.wishing-well__add-btn').trigger('click')
     expect(wrapper.findComponent(WishingWellFormToast).exists()).toBe(true)
   })
 
   it('adds a new wish item after toast form submit', async () => {
-    const wrapper = mount(WishingWell)
+    const pinia = createPinia()
+    const wrapper = mount(WishingWell, {
+      global: {
+        plugins: [pinia],
+      },
+    })
+    await nextTick()
+    await vi.waitFor(() => {
+      expect(wrapper.findAll('.wishing-well__item').length).toBe(mockWishList.length)
+    }, { timeout: 2000 })
     const originalItemCount = wrapper.findAll('.wishing-well__item').length
 
     await wrapper.get('.wishing-well__add-btn').trigger('click')
-    wrapper.getComponent(WishingWellFormToast).vm.$emit('submit', {
+    setActivePinia(pinia)
+    const wishStore = useWishStore()
+    await wishStore.createWish({
       name: '雲端原生應用',
       teacher: '王小明',
     })
@@ -85,8 +123,8 @@ describe('wishingWell', () => {
     expect(wrapper.text()).toContain('王小明')
   })
 
-  it('renders background cards for stacking effect', () => {
-    const wrapper = mount(WishingWell)
+  it('renders background cards for stacking effect', async () => {
+    const wrapper = await mountWishingWell()
     expect(wrapper.find('.wishing-well__bg-card--1').exists()).toBe(true)
     expect(wrapper.find('.wishing-well__bg-card--2').exists()).toBe(true)
   })

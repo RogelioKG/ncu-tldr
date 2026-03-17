@@ -7,15 +7,11 @@ export interface SavedCourseEntry {
   order: number
 }
 
-const savedEntries = ref<SavedCourseEntry[]>([
-  { courseId: 1, order: 0 },
-  { courseId: 3, order: 1 },
-  { courseId: 5, order: 2 },
-])
+const savedEntries = ref<SavedCourseEntry[]>([])
 
 export function useSavedCourses() {
   const savedCourses = computed<Course[]>(() => {
-    const sorted = [...savedEntries.value].sort((a, b) => a.order - b.order)
+    const sorted = savedEntries.value.toSorted((a, b) => a.order - b.order)
     return sorted
       .map(entry => mockCourses.find(c => c.id === entry.courseId))
       .filter((c): c is Course => c !== undefined)
@@ -44,7 +40,7 @@ export function useSavedCourses() {
   }
 
   function moveUp(courseId: number) {
-    const sorted = [...savedEntries.value].sort((a, b) => a.order - b.order)
+    const sorted = savedEntries.value.toSorted((a, b) => a.order - b.order)
     const idx = sorted.findIndex(e => e.courseId === courseId)
     if (idx <= 0)
       return
@@ -57,7 +53,7 @@ export function useSavedCourses() {
   }
 
   function moveDown(courseId: number) {
-    const sorted = [...savedEntries.value].sort((a, b) => a.order - b.order)
+    const sorted = savedEntries.value.toSorted((a, b) => a.order - b.order)
     const idx = sorted.findIndex(e => e.courseId === courseId)
     if (idx < 0 || idx >= sorted.length - 1)
       return
@@ -70,7 +66,7 @@ export function useSavedCourses() {
   }
 
   function reindex() {
-    const sorted = [...savedEntries.value].sort((a, b) => a.order - b.order)
+    const sorted = savedEntries.value.toSorted((a, b) => a.order - b.order)
     sorted.forEach((entry, i) => {
       entry.order = i
     })

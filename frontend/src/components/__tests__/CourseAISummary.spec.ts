@@ -2,6 +2,7 @@ import type { CourseSummary } from '@/types'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import CourseAISummary from '../CourseAISummary.vue'
+import CourseReviewForm from '../CourseReviewForm.vue'
 
 const mockSummary: CourseSummary = {
   overview: '這是一門基礎課程',
@@ -31,6 +32,13 @@ describe('courseAISummary', () => {
       props: { summary: mockSummary },
     })
     expect(wrapper.text()).toContain('以下統整來自 42 則評價')
+  })
+
+  it('renders review action button when summary exists', () => {
+    const wrapper = mount(CourseAISummary, {
+      props: { summary: mockSummary },
+    })
+    expect(wrapper.find('.ai-summary__action-btn').exists()).toBe(true)
   })
 
   it('renders overview', () => {
@@ -104,5 +112,23 @@ describe('courseAISummary', () => {
     })
     const img = wrapper.find('.ai-summary__empty-icon')
     expect(img.exists()).toBe(true)
+  })
+
+  it('opens review form and emits submit-review', async () => {
+    const wrapper = mount(CourseAISummary, {
+      props: { summary: mockSummary, courseName: '資料結構' },
+    })
+    await wrapper.get('.ai-summary__action-btn').trigger('click')
+    const form = wrapper.findComponent(CourseReviewForm)
+    expect(form.exists()).toBe(true)
+    form.vm.$emit('submit', {
+      title: '[114-1] 資料結構',
+      content: '內容',
+      ratings: { reward: 5, score: 4, easiness: 3, teacherStyle: 4 },
+      weeklyHours: '5h',
+      textbook: '講義',
+      semester: '114-1',
+    })
+    expect(wrapper.emitted('submitReview')).toBeTruthy()
   })
 })

@@ -9,7 +9,7 @@ const mockCourse: Course = {
   teacher: '王小明',
   tags: ['必修', '程式設計', '資工系'],
   ratings: { reward: 4.5, score: 4.0, easiness: 3.5, teacherStyle: 4.2 },
-  schoolDept: '資訊工程學系',
+  department: '資訊工程學系',
   code: 'CS101',
   time: '週一 3-4',
   credits: 3,
@@ -152,5 +152,27 @@ describe('courseDetail', () => {
     })
     const commentsComponent = wrapper.findComponent({ name: 'CourseComments' })
     expect(commentsComponent.props('comments')).toEqual([])
+  })
+
+  it('re-emits submit review from AI summary', async () => {
+    const wrapper = mount(CourseDetail, {
+      props: { course: mockCourse },
+      global: {
+        stubs: {
+          RouterLink: true,
+        },
+      },
+    })
+    const aiSummary = wrapper.findComponent({ name: 'CourseAISummary' })
+    aiSummary.vm.$emit('submitReview', {
+      title: 't',
+      content: 'c',
+      ratings: { reward: 5, score: 4, easiness: 3, teacherStyle: 4 },
+      weeklyHours: '5h',
+      textbook: 'x',
+      semester: '114-1',
+    })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.emitted('submitReview')).toBeTruthy()
   })
 })

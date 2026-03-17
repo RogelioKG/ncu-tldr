@@ -99,21 +99,21 @@ describe('course comments', () => {
     const wrapper = mount(CourseComments, {
       props: { comments: mockComments },
     })
-    expect(wrapper.find('.comments__input').exists()).toBe(true)
+    expect(wrapper.find('.comments__input-row').find('.comments__input').exists()).toBe(true)
   })
 
   it('renders submit button', () => {
     const wrapper = mount(CourseComments, {
       props: { comments: mockComments },
     })
-    expect(wrapper.find('.comments__submit-btn').exists()).toBe(true)
+    expect(wrapper.find('.comments__input-row').find('.comments__submit-btn').exists()).toBe(true)
   })
 
   it('disables submit button when input is empty', () => {
     const wrapper = mount(CourseComments, {
       props: { comments: mockComments },
     })
-    const submitBtn = wrapper.find('.comments__submit-btn')
+    const submitBtn = wrapper.find('.comments__input-row').find('.comments__submit-btn')
     expect(submitBtn.attributes('disabled')).toBeDefined()
   })
 
@@ -131,9 +131,10 @@ describe('course comments', () => {
     const wrapper = mount(CourseComments, {
       props: { comments: mockComments },
     })
-    const input = wrapper.find('.comments__input')
+    const inputRow = wrapper.find('.comments__input-row')
+    const input = inputRow.find('.comments__input')
     await input.setValue('新留言')
-    await wrapper.find('.comments__submit-btn').trigger('click')
+    await inputRow.find('.comments__submit-btn').trigger('click')
     expect((input.element as HTMLInputElement).value).toBe('')
   })
 
@@ -141,7 +142,7 @@ describe('course comments', () => {
     const wrapper = mount(CourseComments, {
       props: { comments: mockComments },
     })
-    const input = wrapper.find('.comments__input')
+    const input = wrapper.find('.comments__input-row').find('.comments__input')
     await input.setValue('新留言')
     await input.trigger('keydown', { key: 'Enter' })
     expect((input.element as HTMLInputElement).value).toBe('')
@@ -151,10 +152,54 @@ describe('course comments', () => {
     const wrapper = mount(CourseComments, {
       props: { comments: mockComments },
     })
-    const input = wrapper.find('.comments__input')
+    const inputRow = wrapper.find('.comments__input-row')
+    const input = inputRow.find('.comments__input')
     await input.setValue('   ')
-    await wrapper.find('.comments__submit-btn').trigger('click')
-    // Input should not be cleared if submission didn't happen
+    await inputRow.find('.comments__submit-btn').trigger('click')
     expect((input.element as HTMLInputElement).value).toBe('   ')
+  })
+
+  it('renders reply button on root comments', () => {
+    const wrapper = mount(CourseComments, {
+      props: { comments: mockComments },
+    })
+    const replyBtns = wrapper.findAll('.comments__reply-btn')
+    expect(replyBtns.length).toBe(2)
+  })
+
+  it('shows inline reply form when reply clicked', async () => {
+    const wrapper = mount(CourseComments, {
+      props: { comments: mockComments },
+    })
+    const replyBtns = wrapper.findAll('.comments__reply-btn')
+    await replyBtns[0]?.trigger('click')
+    expect(wrapper.find('.comments__reply-form').exists()).toBe(true)
+  })
+
+  it('renders replies with indent', () => {
+    const withReplies: CourseComment[] = [
+      { id: 1, user: 'A', title: 'Root', content: 'x', date: '2024-01-01', likes: 0, dislikes: 0 },
+      { id: 2, user: 'B', title: 'Reply', content: 'y', date: '2024-01-02', likes: 0, dislikes: 0, parentId: 1 },
+    ]
+    const wrapper = mount(CourseComments, {
+      props: { comments: withReplies },
+    })
+    const replyItems = wrapper.findAll('.comments__item--reply')
+    expect(replyItems.length).toBe(1)
+    expect(replyItems[0]?.text()).toContain('y')
+  })
+
+  it('emits reply when submitting reply', async () => {
+    const wrapper = mount(CourseComments, {
+      props: { comments: mockComments },
+    })
+    await wrapper.findAll('.comments__reply-btn')[0]?.trigger('click')
+    const replyInput = wrapper.find('.comments__reply-form').find('.comments__input')
+    await replyInput.setValue('回覆內容')
+    await wrapper.find('.comments__reply-form').find('.comments__submit-btn').trigger('click')
+    expect(wrapper.emitted('reply')).toHaveLength(1)
+    const emitted = wrapper.emitted('reply')?.[0] as [{ parentId: number, content: string }]
+    expect(emitted[0].parentId).toBeDefined()
+    expect(emitted[0].content).toBe('回覆內容')
   })
 })

@@ -64,6 +64,7 @@ class Course(Base):
     department: Mapped["Department"] = relationship(back_populates="courses")  # type: ignore[name-defined]  # noqa: F821
     teacher: Mapped["Teacher"] = relationship(back_populates="courses")  # type: ignore[name-defined]  # noqa: F821
     wishes: Mapped[list["Wish"]] = relationship(back_populates="course")  # type: ignore[name-defined]  # noqa: F821
+    comments: Mapped[list["Comment"]] = relationship(back_populates="course")  # type: ignore[name-defined]  # noqa: F821
 
     __table_args__ = (
         UniqueConstraint("course_code", "teacher_id", name="uq_courses_code_teacher"),

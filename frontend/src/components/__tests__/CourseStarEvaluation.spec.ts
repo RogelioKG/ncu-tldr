@@ -66,12 +66,16 @@ describe('courseStarEvaluation', () => {
     expect(wrapper.text()).toContain('/ 5')
   })
 
-  it('renders progress bars for each metric', () => {
+  it('renders all four rating metrics in metrics section', () => {
     const wrapper = mount(CourseStarEvaluation, {
       props: { ratings: mockRatings },
     })
-    const bars = wrapper.findAll('.rating-card__bar')
-    expect(bars.length).toBe(4)
+    const metrics = wrapper.find('.rating-card__metrics')
+    expect(metrics.exists()).toBe(true)
+    expect(wrapper.text()).toContain('收穫')
+    expect(wrapper.text()).toContain('分數')
+    expect(wrapper.text()).toContain('輕鬆')
+    expect(wrapper.text()).toContain('教師風格')
   })
 
   it('renders subtitle', () => {

@@ -58,9 +58,9 @@ NCU-TLDR/
 │   └── vite.config.ts        # Vite 設定檔
 ├── docs/                     # 專案文件
 │   └── database-design.md    # 資料庫設計文件
-├── docker-compose.yml        # Docker 共用服務定義
-├── docker-compose.dev.yml    # Docker 開發環境覆寫
-├── docker-compose.prod.yml   # Docker 生產環境覆寫
+├── docker-compose.yml        # Docker 開發環境（db + backend + frontend）
+├── docker-compose.dev.yml    # 選用：前端 hot reload 進階設定
+├── docker-compose.prod.yml   # 生產環境覆寫（日後使用）
 ├── .dockerignore             # Docker build context 忽略規則
 ├── pnpm-workspace.yaml       # Monorepo Workspace 設定
 └── README.md                 # 專案說明文件
@@ -95,47 +95,58 @@ NCU-TLDR/
    ```
    瀏覽器將自動開啟 `http://localhost:5173`。
 
-## 🐳 Docker 開發須知
+4. **（選用）接後端 API**  
+   要讓前端打真實後端與 DB，在 `frontend` 目錄新增 `.env` 或 `.env.local`，設定：
+   ```bash
+   VITE_API_BASE_URL=http://localhost:8000
+   ```
+   可參考 `frontend/.env.example`。未設定時前端使用 Mock 資料，導航列會顯示「資料: Mock」。
 
-### 檔案分工
+## 🐳 Docker 開發（後端建置）
 
-- `docker-compose.yml`：共用基礎服務（`db`、`backend`、`frontend`）
-- `docker-compose.dev.yml`：開發模式（volume mount + hot reload）
-- `docker-compose.prod.yml`：生產模式（production target + nginx）
-- `backend/Dockerfile`：Python 開發/生產 multi-stage image
-- `frontend/Dockerfile`：Vite 開發 + nginx 生產 multi-stage image
-- `frontend/nginx.conf`：SPA fallback 與 `/api/` 反向代理
+目前以**單一開發流程**為主，不區分 dev/prod compose。後端為單一 stage 建置，volume mount 支援 hot reload。
 
-### 開發環境啟動
+### 後端建置與啟動
 
-```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-```
-
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:8000`
-- PostgreSQL: `localhost:5432`
-
-### 生產模式啟動（本機模擬）
+一鍵啟動 DB + Backend + Frontend（皆含 volume、hot reload）：
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+docker compose up --build
 ```
 
-- Frontend (nginx): `http://localhost`
-- Backend: `http://localhost:8000`
+- **Frontend**: http://localhost:5173  
+- **Backend**: http://localhost:8000  
+- **PostgreSQL**: localhost:5432  
+
+後端目錄 `./backend` 已掛載進容器，改碼後 uvicorn `--reload` 會自動重啟。
+
+### 本機僅跑後端（不用 Docker）
+
+若只在本機開發後端、DB 用 Docker：
+
+```bash
+# 終端 1：只起 DB
+docker compose up db -d
+
+# 終端 2：backend 目錄用 uv
+cd backend
+uv sync
+uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+需設定 `DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/ncu_tldr`（或 `.env`）。
 
 ### Alembic Migration
 
 ```bash
-docker compose exec backend alembic upgrade head
+docker compose exec backend uv run alembic upgrade head
 ```
 
 ### 注意事項
 
-- Docker 內部 DB 連線 host 必須用 service name `db`，不可用 `localhost`。
-- PostgreSQL 使用 named volume `pgdata` 持久化資料。
-- 目前 `backend/main.py` 尚未建立 FastAPI `app` 物件，直接啟動 `uvicorn main:app` 會失敗；需先完成後端入口實作。
+- 容器內連 DB 請用 service name `db`，勿用 `localhost`。
+- 資料庫資料持久化於 volume `pgdata`。
+- 生產用 `docker-compose.prod.yml` 與多 stage 建置留待日後需要時再啟用。
 
 ### 測試
 

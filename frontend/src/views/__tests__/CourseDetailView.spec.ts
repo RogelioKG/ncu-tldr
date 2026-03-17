@@ -1,4 +1,5 @@
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import CourseDetailView from '../CourseDetailView.vue'
@@ -23,11 +24,12 @@ describe('courseDetailView', () => {
 
     const wrapper = mount(CourseDetailView, {
       global: {
-        plugins: [router],
+        plugins: [router, createPinia()],
       },
     })
 
     await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 0))
     expect(wrapper.findComponent({ name: 'CourseDetail' }).exists()).toBe(true)
   })
 
@@ -37,11 +39,12 @@ describe('courseDetailView', () => {
 
     const wrapper = mount(CourseDetailView, {
       global: {
-        plugins: [router],
+        plugins: [router, createPinia()],
       },
     })
 
     await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 0))
     expect(wrapper.text()).toContain('找不到該課程資訊')
   })
 
@@ -51,11 +54,12 @@ describe('courseDetailView', () => {
 
     const wrapper = mount(CourseDetailView, {
       global: {
-        plugins: [router],
+        plugins: [router, createPinia()],
       },
     })
 
     await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 0))
     // Course 2 exists in mock data
     const courseDetail = wrapper.findComponent({ name: 'CourseDetail' })
     if (courseDetail.exists()) {
@@ -69,11 +73,12 @@ describe('courseDetailView', () => {
 
     const wrapper = mount(CourseDetailView, {
       global: {
-        plugins: [router],
+        plugins: [router, createPinia()],
       },
     })
 
     await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 0))
     const courseDetail = wrapper.findComponent({ name: 'CourseDetail' })
     if (courseDetail.exists()) {
       expect(typeof courseDetail.props('course')?.id).toBe('number')

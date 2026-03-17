@@ -51,6 +51,41 @@ export interface CourseComment {
   likes: number
   /** 倒讚數 */
   dislikes: number
+  /** 回覆對象 ID（undefined/null = 根留言） */
+  parentId?: number
+  /** 評分資訊（可選，用於本地即時重算） */
+  ratings?: CourseRatings
+}
+
+export interface CommentTreeNode {
+  root: CourseComment
+  replies: CourseComment[]
+}
+
+export function buildCommentTree(
+  flat: CourseComment[],
+  sortByDate: (a: CourseComment, b: CourseComment) => number,
+  sortByPopular: (a: CourseComment, b: CourseComment) => number,
+  sortMode: 'date' | 'popular',
+): CommentTreeNode[] {
+  const roots = flat.filter(c => c.parentId == null)
+  const byParent = new Map<number, CourseComment[]>()
+  for (const c of flat) {
+    if (c.parentId != null) {
+      const list = byParent.get(c.parentId) ?? []
+      list.push(c)
+      byParent.set(c.parentId, list)
+    }
+  }
+  const cmp = sortMode === 'date' ? sortByDate : sortByPopular
+  roots.sort(cmp)
+  for (const list of byParent.values())
+    list.sort(sortByDate)
+
+  return roots.map(root => ({
+    root,
+    replies: (byParent.get(root.id) ?? []).sort(sortByDate),
+  }))
 }
 
 export interface Course {
@@ -68,7 +103,7 @@ export interface Course {
   /** 開課學期 (Optional for mock) */
   semester?: string
   /** 系所/單位 (Optional for mock) */
-  schoolDept?: string
+  department?: string
   /** 課號 (Optional for mock) */
   code?: string
   /** 上課時間 (Optional for mock) */
@@ -90,6 +125,8 @@ export interface WishCourse {
   name: string
   /** 授課教師 */
   teacher: string
+  /** 許願人數 */
+  voteCount?: number
 }
 
 /** 排序方向 */
