@@ -1,6 +1,0 @@
----
-description: 
-alwaysApply: true
----
-
-強制使用：Vue3、Composition API、setup 語法糖、Typescript。

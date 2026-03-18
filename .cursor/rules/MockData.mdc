@@ -1,4 +1,0 @@
----
-alwaysApply: false
----
-Always add mock data into the target file in ./mock directory. Don't add mock data in Component or View file.
