@@ -2,7 +2,7 @@
 import { computed, reactive, ref } from 'vue'
 import StarRatingInput from './StarRatingInput.vue'
 
-defineProps<{
+const props = defineProps<{
   courseName: string
 }>()
 
@@ -96,7 +96,7 @@ function handleSubmit() {
     `教材：${form.textbook.trim() || '未填寫'}`,
   ].join('；')
   emit('submit', {
-    title: `[${form.semester}] ${courseName}`,
+    title: `[${form.semester}] ${props.courseName}`,
     content: generatedContent,
     ratings: {
       reward: form.reward,
