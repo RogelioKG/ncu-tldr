@@ -13,6 +13,16 @@
 
 $ErrorActionPreference = "Stop"
 
+# Force UTF-8 encoding WITHOUT BOM for console output and pipeline to external programs.
+# [System.Text.Encoding]::UTF8 includes a BOM (\xEF\xBB\xBF) which causes psql to choke
+# on the first SQL statement (e.g. "BEGIN;" becomes "<BOM>BEGIN;" → syntax error).
+$Utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[Console]::InputEncoding  = $Utf8NoBom
+[Console]::OutputEncoding = $Utf8NoBom
+$OutputEncoding = $Utf8NoBom
+# Set code page to UTF-8 (65001) for child processes like psql / docker
+chcp 65001 | Out-Null
+
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $SeedsDir = Join-Path $ScriptDir "seeds"
 $BackendDir = Split-Path -Parent $ScriptDir
@@ -50,10 +60,12 @@ function Run-SqlFile {
     Info "Seeding: $Filename"
 
     # Try psql directly first, fall back to docker exec
+    # --set ON_ERROR_STOP=1 makes psql return non-zero exit code on SQL errors
     $psqlPath = Get-Command psql -ErrorAction SilentlyContinue
     if ($psqlPath) {
         $env:PGPASSWORD = $DB_PASSWORD
-        psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -f $SqlFile
+        $env:PGCLIENTENCODING = "UTF8"
+        psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME --set ON_ERROR_STOP=1 -f $SqlFile
         if ($LASTEXITCODE -ne 0) { Error "Seeding $Filename failed." }
     } else {
         Warn "psql not found locally, using docker exec..."
@@ -64,7 +76,9 @@ function Run-SqlFile {
         if (-not $container) {
             Error "Cannot find running db container. Is 'docker compose up db' running?"
         }
-        Get-Content $SqlFile | docker exec -i $container psql -U $DB_USER -d $DB_NAME
+        # Use cmd /c to pipe file content via native redirection, bypassing PowerShell
+        # pipeline which prepends a UTF-8 BOM that breaks psql parsing.
+        cmd /c "docker exec -i $container psql -U $DB_USER -d $DB_NAME --set ON_ERROR_STOP=1 < `"$SqlFile`""
         if ($LASTEXITCODE -ne 0) { Error "Seeding $Filename failed." }
     }
 
