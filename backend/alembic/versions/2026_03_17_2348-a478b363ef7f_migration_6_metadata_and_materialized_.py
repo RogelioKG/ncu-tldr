@@ -24,6 +24,7 @@ def upgrade() -> None:
     op.create_table(
         "metadata",
         sa.Column("id", sa.Integer(), server_default=sa.text("1"), nullable=False),
+        sa.Column("version", sa.String(length=32), nullable=False),
         sa.Column("last_update_time", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint("id = 1", name="single_row"),
         sa.PrimaryKeyConstraint("id"),
