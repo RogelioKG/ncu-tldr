@@ -44,7 +44,7 @@ def _parse_day_period(token: str) -> tuple[int | None, str | None]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Extract seed SQL files from all.json for migration-ordered imports."
+        description="Extract seed SQL files from all.json (v2 format) for migration-ordered imports."
     )
     parser.add_argument(
         "--input",
@@ -61,9 +61,10 @@ def main() -> int:
     args = parser.parse_args()
 
     raw = json.loads(args.input.read_text(encoding="utf-8"))
-    colleges: list[dict[str, Any]] = raw.get("colleges", [])
-    departments: list[dict[str, Any]] = raw.get("departments", [])
-    courses: list[dict[str, Any]] = raw.get("courses", [])
+    data = raw.get("data", raw)
+    colleges: list[dict[str, Any]] = data.get("colleges", [])
+    departments: list[dict[str, Any]] = data.get("departments", [])
+    courses: list[dict[str, Any]] = data.get("courses", [])
 
     teachers_set: set[str] = set()
     for c in courses:
@@ -288,6 +289,32 @@ def main() -> int:
     (out_dir / "course_relations_seed.generated.sql").write_text(
         "".join(relations_parts), encoding="utf-8"
     )
+
+    # M6: metadata
+    meta = raw.get("meta", {})
+    version = meta.get("version", "unknown")
+    updated_at = meta.get("updatedAt")
+    if updated_at:
+        metadata_sql = (
+            "BEGIN;\n\n"
+            "INSERT INTO metadata (id, version, last_update_time)\n"
+            f"VALUES (1, {_sql_text(version)}, {_sql_text(updated_at)}::timestamptz)\n"
+            "ON CONFLICT (id) DO UPDATE SET\n"
+            "  version = EXCLUDED.version,\n"
+            "  last_update_time = EXCLUDED.last_update_time;\n\n"
+            "COMMIT;\n"
+        )
+    else:
+        metadata_sql = (
+            "BEGIN;\n\n"
+            "INSERT INTO metadata (id, version, last_update_time)\n"
+            f"VALUES (1, {_sql_text(version)}, now())\n"
+            "ON CONFLICT (id) DO UPDATE SET\n"
+            "  version = EXCLUDED.version,\n"
+            "  last_update_time = EXCLUDED.last_update_time;\n\n"
+            "COMMIT;\n"
+        )
+    (out_dir / "metadata_seed.generated.sql").write_text(metadata_sql, encoding="utf-8")
 
     return 0
 
