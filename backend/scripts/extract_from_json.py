@@ -44,13 +44,13 @@ def _parse_day_period(token: str) -> tuple[int | None, str | None]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Extract seed SQL files from courses_data.json for migration-ordered imports."
+        description="Extract seed SQL files from all.json for migration-ordered imports."
     )
     parser.add_argument(
         "--input",
         type=Path,
         required=True,
-        help="Path to courses_data.json",
+        help="Path to all.json",
     )
     parser.add_argument(
         "--out-dir",
@@ -61,6 +61,8 @@ def main() -> int:
     args = parser.parse_args()
 
     raw = json.loads(args.input.read_text(encoding="utf-8"))
+    colleges: list[dict[str, Any]] = raw.get("colleges", [])
+    departments: list[dict[str, Any]] = raw.get("departments", [])
     courses: list[dict[str, Any]] = raw.get("courses", [])
 
     teachers_set: set[str] = set()
@@ -74,7 +76,46 @@ def main() -> int:
     out_dir: Path = args.out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # M1: teachers
+    # M1: colleges
+    college_rows = [
+        [c["collegeId"], c["collegeName"]] for c in colleges if c.get("collegeId")
+    ]
+    colleges_sql = (
+        "BEGIN;\n\n"
+        "INSERT INTO colleges (code, name)\n"
+        "VALUES\n  "
+        + _sql_values_rows(college_rows)
+        + "\nON CONFLICT (code) DO UPDATE SET\n"
+        "  name = EXCLUDED.name;\n\n"
+        "COMMIT;\n"
+    )
+    (out_dir / "colleges_seed.generated.sql").write_text(colleges_sql, encoding="utf-8")
+
+    # M2: departments
+    dept_seed_rows = [
+        [d["departmentId"], d["departmentName"], d["collegeId"]]
+        for d in departments
+        if d.get("departmentId") and d.get("collegeId")
+    ]
+    departments_sql = (
+        "BEGIN;\n\n"
+        "INSERT INTO departments (code, name, college_id)\n"
+        "SELECT v.code, v.name, c.id\n"
+        "FROM (\n"
+        "  VALUES\n  "
+        + _sql_values_rows(dept_seed_rows)
+        + "\n) AS v(code, name, college_code)\n"
+        "JOIN colleges c ON c.code = v.college_code\n"
+        "ON CONFLICT (code) DO UPDATE SET\n"
+        "  name = EXCLUDED.name,\n"
+        "  college_id = EXCLUDED.college_id;\n\n"
+        "COMMIT;\n"
+    )
+    (out_dir / "departments_seed.generated.sql").write_text(
+        departments_sql, encoding="utf-8"
+    )
+
+    # M3: teachers
     teachers_sql = (
         "BEGIN;\n\n"
         "INSERT INTO teachers (name)\n"
@@ -85,7 +126,7 @@ def main() -> int:
     )
     (out_dir / "teachers_seed.generated.sql").write_text(teachers_sql, encoding="utf-8")
 
-    # M2: courses
+    # M4: courses
     errors: list[str] = []
     course_rows = []
     for c in courses:
@@ -157,7 +198,7 @@ def main() -> int:
     )
     (out_dir / "courses_seed.generated.sql").write_text(courses_sql, encoding="utf-8")
 
-    # M3: relations (no FK yet, but keep it FK-clean by design)
+    # M5: relations
     ct_rows: list[list[Any]] = []
     time_rows: list[list[Any]] = []
     time_seen: set[tuple[Any, int, str]] = set()
