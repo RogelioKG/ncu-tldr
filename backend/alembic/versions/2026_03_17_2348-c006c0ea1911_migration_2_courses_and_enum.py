@@ -61,6 +61,7 @@ def upgrade() -> None:
             "wait_cnt", sa.Integer(), server_default=sa.text("0"), nullable=False
         ),
         sa.Column("course_type", course_type_enum, nullable=False),
+        sa.Column("last_semester", sa.Text(), nullable=True),
         sa.Column(
             "updated_at",
             sa.DateTime(timezone=True),
