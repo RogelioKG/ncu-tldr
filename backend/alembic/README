@@ -1,3 +1,344 @@
-## Migration Guide
+# Alembic Migration Guide
 
-PR review / merge 時：由負責 merge 的人確認當下最新序號後手動加上 `v<序號>__` 前綴
+本文件說明 NCU TLDR 專案的 Alembic 資料庫遷移使用方式、開發流程與規範。
+
+---
+
+## 目錄
+
+1. [概覽](#概覽)
+2. [前置準備](#前置準備)
+3. [開發流程](#開發流程)
+4. [首次建立資料庫（完整初始化）](#首次建立資料庫完整初始化)
+5. [Migration 命名規範](#migration-命名規範)
+6. [常用指令](#常用指令)
+7. [常見問題排查](#常見問題排查)
+
+---
+
+## 概覽
+
+本專案使用 **Alembic** 管理 PostgreSQL schema 版本，配合 SQLAlchemy 2.0 async ORM。
+
+資料庫初始化分為兩個獨立步驟：
+
+1. **Migration**：執行 Alembic 建立/修改 schema（表格、索引、FK）
+2. **Seeding**：執行預先產生的 `.sql` 檔案植入初始資料
+
+Migration 與 Seed 的順序彼此耦合，詳見[開發流程](#開發流程)。
+
+### 架構特點
+
+- Schema 分階段建立：先建表格（無 FK）→ 植入資料 → 最後加 FK constraints
+- 索引使用 `CONCURRENTLY` 避免鎖表
+- 使用 `ON CONFLICT ... DO UPDATE/NOTHING` 讓 Seed 可重複執行
+- `alembic/env.py` 從環境變數 `DATABASE_URL_SYNC` 讀取連線字串（不寫死）
+
+---
+
+## 前置準備
+
+### 1. 環境變數
+
+在 `backend/` 目錄下建立 `.env`（參考 `.env.example`）：
+
+```
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/ncu_tldr
+DATABASE_URL_SYNC=postgresql+psycopg2://postgres:postgres@localhost:5432/ncu_tldr
+```
+
+> Alembic 執行 migration 需要 `DATABASE_URL_SYNC`（同步驅動）。
+> 應用程式執行時使用 `DATABASE_URL`（非同步驅動）。
+
+### 2. 啟動資料庫
+
+```bash
+# 從專案根目錄
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up db -d
+```
+
+### 3. 安裝套件
+
+```bash
+cd backend
+uv sync
+```
+
+---
+
+## 開發流程
+
+### 新增一個 Migration
+
+1. **修改或新增 ORM model**（`app/models/`）
+
+2. **產生 migration 檔案**
+
+   ```bash
+   cd backend
+   uv run alembic revision --autogenerate -m "your description here"
+   ```
+
+   Alembic 會自動比對 `Base.metadata`（來自所有 model）與當前資料庫 schema 的差異，產生 migration 檔案至 `alembic/versions/`。
+
+3. **檢閱產生的檔案**
+
+   - 確認 `upgrade()` 與 `downgrade()` 內容正確
+   - **autogenerate 不完美**，以下情況需手動補充：
+     - PostgreSQL ENUM 型別的建立與刪除
+     - 使用 `CONCURRENTLY` 的索引（需手動改寫）
+     - 修改 check constraints
+     - 任何非 SQLAlchemy 原生功能
+
+4. **套用 migration**
+
+   ```bash
+   uv run alembic upgrade head
+   ```
+
+5. **提交前命名**：依照[命名規範](#migration-命名規範)重新命名檔案
+
+### 確認目前狀態
+
+```bash
+uv run alembic current   # 顯示資料庫目前 revision
+uv run alembic history   # 顯示所有 migration 歷史
+```
+
+---
+
+## 首次建立資料庫（完整初始化）
+
+專案提供自動化腳本，一鍵執行所有 migration 並植入初始資料。
+
+### 步驟一：產生 Seed SQL
+
+從課程資料 JSON 產生 seed 檔案：
+
+```bash
+cd backend
+uv run python scripts/extract_from_json.py \
+  --input /path/to/all.json \
+  --out-dir scripts/seeds/
+```
+
+產生的檔案：
+- `colleges_seed.generated.sql`
+- `departments_seed.generated.sql`
+- `teachers_seed.generated.sql`
+- `courses_seed.generated.sql`
+- `course_relations_seed.generated.sql`
+- `metadata_seed.generated.sql`
+
+### 步驟二：執行 migrate & seed
+
+**Linux / macOS：**
+
+```bash
+cd backend
+bash scripts/migrate_and_seed.sh
+```
+
+**Windows（PowerShell）：**
+
+```powershell
+cd backend
+.\scripts\migrate_and_seed.ps1
+```
+
+腳本執行順序如下，Migration 與 Seed 交錯進行：
+
+```
+v1 (base tables)    → seed: colleges, departments, teachers
+v2 (courses+enum)   → seed: courses
+v3 (relation tables) → seed: course_relations
+v4 (foreign keys)
+v5 (indexes)
+v6 (metadata)        → seed: metadata
+```
+
+> 先建表、先 seed、最後才加 FK，是為了避免資料植入時的外鍵循環依賴問題。
+
+---
+
+## Migration 命名規範
+
+### 格式
+
+```
+v<序號>__<revision hash>__<slug>.py
+```
+
+範例：
+```
+v1__50b6a42940f4__base_tables_no_fk.py
+v2__c006c0ea1911__courses_and_enum.py
+```
+
+- `<序號>`：從 1 開始的連續整數，代表套用順序
+- `<revision hash>`：Alembic 自動產生的 hash（取前 12 碼）
+- `<slug>`：簡短描述此 migration 的內容，使用 `_` 分隔單字
+
+### Merge 流程
+
+`alembic revision --autogenerate` 產生的原始檔名格式為：
+
+```
+<revision_hash>_<message>.py
+```
+
+**PR review / merge 時：由負責 merge 的人確認當下最新序號後，手動加上 `v<序號>__` 前綴。**
+
+例如，若目前最新為 `v6`，則新的 migration 命名為 `v7__<hash>__<slug>.py`。
+
+> 不在開發分支上自行加序號，避免多人開發時序號衝突。
+
+---
+
+## 常用指令
+
+```bash
+# 套用所有未執行的 migration
+uv run alembic upgrade head
+
+# 只套用到特定 revision
+uv run alembic upgrade <revision>
+
+# 回退一個版本
+uv run alembic downgrade -1
+
+# 回退到最初狀態（清空所有 migration）
+uv run alembic downgrade base
+
+# 查看目前資料庫版本
+uv run alembic current
+
+# 查看 migration 歷史
+uv run alembic history --verbose
+
+# 自動產生 migration（需先修改 model）
+uv run alembic revision --autogenerate -m "description"
+
+# 產生空白 migration（手動編寫）
+uv run alembic revision -m "description"
+
+# 以 SQL 模式預覽（不實際執行）
+uv run alembic upgrade head --sql
+```
+
+---
+
+## 常見問題排查
+
+### `Can't locate revision identified by ...`
+
+**原因**：資料庫中記錄的 revision ID 在 `versions/` 目錄找不到對應檔案。
+
+**解法**：
+- 確認 `alembic/versions/` 下的所有 `.py` 檔案都存在
+- 確認檔案未被重新命名導致 hash 不符（`down_revision` 是根據 hash，不是序號）
+- 執行 `uv run alembic history` 確認 chain 是否完整
+
+---
+
+### `Target database is not up to date`
+
+**原因**：執行 `downgrade` 或有 pending migration 尚未套用。
+
+**解法**：
+
+```bash
+uv run alembic current   # 確認當前版本
+uv run alembic upgrade head  # 套用所有 pending migrations
+```
+
+---
+
+### `relation "xxx" already exists`
+
+**原因**：資料庫已有該表格，但 Alembic 的版本記錄遺失（例如直接手動建表，或 `alembic_version` 表被清除）。
+
+**解法（開發環境）**：
+
+```bash
+# 直接刪掉資料庫重來
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up db -d
+uv run alembic upgrade head
+```
+
+**解法（不想刪資料）**：
+
+```bash
+# 強制將 alembic_version 指向已存在 schema 對應的 revision
+uv run alembic stamp <revision>
+```
+
+---
+
+### `DuplicateObject: type "xxx" already exists`（ENUM）
+
+**原因**：PostgreSQL ENUM 型別已存在，但 migration 試圖重新建立。
+
+**解法**：在 migration 的 `upgrade()` 中加入 `IF NOT EXISTS`（需手動撰寫，autogenerate 不處理）：
+
+```python
+from alembic import op
+
+def upgrade():
+    op.execute("DO $$ BEGIN CREATE TYPE course_type_enum AS ENUM ('REQUIRED', 'ELECTIVE'); EXCEPTION WHEN duplicate_object THEN null; END $$;")
+```
+
+---
+
+### `autogenerate` 產生不必要的 diff
+
+**原因**：model 的 `__table_args__` 或 server default 格式與 DB 中的描述不完全一致。
+
+**常見觸發點**：
+- `server_default` 使用字串 vs `text()` 包裝
+- index 的 `postgresql_concurrently=True` — autogenerate 不支援，需手動處理
+- PostgreSQL ENUM — autogenerate 偵測不完整
+
+**解法**：仔細閱讀產生的 migration，刪除不必要的操作，或調整 model 定義使其與 DB 一致。
+
+---
+
+### Migration 套用一半失敗
+
+**原因**：migration 中間發生錯誤（例如 syntax error、constraint violation）。
+
+**解法**：
+
+1. 確認錯誤訊息，找出失敗的 SQL
+2. 視情況手動修復資料庫狀態，或回退：
+
+   ```bash
+   uv run alembic downgrade -1
+   ```
+
+3. 修正 migration 檔案後重新套用：
+
+   ```bash
+   uv run alembic upgrade head
+   ```
+
+> 若 migration 包含無法在 transaction 中執行的操作（如 `CREATE INDEX CONCURRENTLY`），需在 migration 中設定 `transaction_per_migration = False` 並手動處理部分回退。
+
+---
+
+### Seed 執行失敗：`psql: command not found`
+
+**原因**：本機未安裝 `psql` 客戶端。
+
+**解法**：腳本會自動 fallback 到 `docker exec` 模式，前提是資料庫容器正在運行且容器名稱正確。確認：
+
+```bash
+docker ps   # 確認 db 容器正在跑
+```
+
+若容器名稱不符，可設定環境變數覆蓋：
+
+```bash
+DB_CONTAINER_NAME=my_db_container bash scripts/migrate_and_seed.sh
+```
