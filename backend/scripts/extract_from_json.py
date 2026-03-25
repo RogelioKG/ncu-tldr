@@ -65,6 +65,7 @@ def main() -> int:
     colleges: list[dict[str, Any]] = data.get("colleges", [])
     departments: list[dict[str, Any]] = data.get("departments", [])
     courses: list[dict[str, Any]] = data.get("courses", [])
+    semester: str | None = data.get("semester")
 
     teachers_set: set[str] = set()
     for c in courses:
@@ -161,6 +162,7 @@ def main() -> int:
                 c.get("admitCnt") or 0,
                 c.get("waitCnt") or 0,
                 course_type,
+                semester,
             ]
         )
 
@@ -181,7 +183,8 @@ def main() -> int:
         "  limit_cnt,\n"
         "  admit_cnt,\n"
         "  wait_cnt,\n"
-        "  course_type\n"
+        "  course_type,\n"
+        "  last_semester\n"
         ")\n"
         "VALUES\n  "
         + _sql_values_rows(course_rows)
@@ -194,6 +197,7 @@ def main() -> int:
         "  admit_cnt = EXCLUDED.admit_cnt,\n"
         "  wait_cnt = EXCLUDED.wait_cnt,\n"
         "  course_type = EXCLUDED.course_type,\n"
+        "  last_semester = EXCLUDED.last_semester,\n"
         "  updated_at = now();\n\n"
         "COMMIT;\n"
     )
