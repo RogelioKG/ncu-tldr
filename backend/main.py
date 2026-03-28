@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.routers import (
+    admin_router,
     auth_router,
     comments_router,
     courses_router,
@@ -26,6 +27,7 @@ app.include_router(reviews_router, prefix="/api")
 app.include_router(comments_router, prefix="/api")
 app.include_router(wishlist_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 
 
 @app.get("/health")

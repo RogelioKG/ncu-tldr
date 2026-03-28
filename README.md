@@ -91,31 +91,20 @@ NCU-TLDR/
    pnpm run docker:dev:watch
    ```
 
-3. **初始化資料庫**
-   ```bash
+3. **資料庫初始化**
+   ```
    docker exec -it ncu-tldr-dev-backend alembic upgrade head
    ```
 
-4. **獲取測試資料 SQL 腳本**
+4. **資料庫灌入資料**
    ```bash
-   cd backend
-   uv run scripts/extract_from_json.py --input scripts/all.json --out-dir scripts/seeds
+   cd ./backend/scripts
+   curl -X POST http://localhost:8000/api/admin/sync -H "X-SYNC-SECRET-KEY: change-me-in-production" -H "Content-Type: application/json" -d "@all.json"
    ```
 
-5. **匯入測試資料**
-   - **Windows (PowerShell)**
-     ```powershell
-     powershell -ExecutionPolicy Bypass -File scripts/migrate_and_seed.ps1
-     ```
-   - **Linux / macOS**
-     ```bash
-     bash scripts/migrate_and_seed.sh
-     ```
-
-6. **開始開發**
+5. **開始開發**
    - 前端：[http://localhost:5173](http://localhost:5173)
    - 後端 API 文檔：[http://localhost:8000/docs](http://localhost:8000/docs)
-
 
 ## 🐳 Docker
 

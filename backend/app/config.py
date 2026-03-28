@@ -21,10 +21,9 @@ class Settings(BaseSettings):
     jwt_secret_key: str = Field(default="change-me-in-production")
     jwt_algorithm: str = Field(default="HS256")
     jwt_expire_minutes: int = Field(default=60 * 24 * 7)
+    x_sync_secret_key: str = Field(default="change-me-in-production")
 
-    database_url: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/ncu_tldr"
-    )
+    database_url: str = Field(...)
 
 
 @lru_cache(maxsize=1)

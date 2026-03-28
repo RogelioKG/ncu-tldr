@@ -24,6 +24,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      X_SYNC_SECRET_KEY: ${X_SYNC_SECRET_KEY}
     depends_on:
       db:
         condition: service_healthy
