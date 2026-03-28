@@ -27,7 +27,6 @@ const form = reactive<WishFormPayload>({
 
 const submissionState = ref<SubmissionState>('idle')
 const failureReason = ref('')
-const videoRef = ref<HTMLVideoElement | null>(null)
 
 onMounted(async () => {
   await pairsStore.fetchPairs()
@@ -134,7 +133,6 @@ function handleRetry() {
                   課程女神眷顧我
                 </h3>
                 <video
-                  ref="videoRef"
                   class="wish-toast__video"
                   :src="wishingAnimation"
                   autoplay
