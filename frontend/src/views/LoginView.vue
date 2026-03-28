@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import ErrorToast from '@/components/ErrorToast.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 const router = useRouter()
@@ -9,6 +10,7 @@ const authStore = useAuthStore()
 const email = ref('')
 const password = ref('')
 const errorMsg = ref('')
+const showErrorToast = ref(false)
 
 async function handleSubmit() {
   errorMsg.value = ''
@@ -22,12 +24,13 @@ async function handleSubmit() {
     router.push('/')
   }
   catch {
-    errorMsg.value = '登入失敗，請確認帳號密碼'
+    showErrorToast.value = true
   }
 }
 </script>
 
 <template>
+  <ErrorToast :visible="showErrorToast" @close="showErrorToast = false" />
   <div class="auth-page">
     <div class="auth-card">
       <h1 class="auth-card__heading">

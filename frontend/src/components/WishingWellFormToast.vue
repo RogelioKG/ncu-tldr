@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { ApiError } from '@/api/client'
 import wishingAnimation from '@/assets/wishing_animation_3s.mp4'
+import ErrorToast from '@/components/ErrorToast.vue'
 import { useCoursePairsStore } from '@/stores/useCoursePairsStore'
 import { useWishStore } from '@/stores/useWishStore'
 
@@ -10,7 +10,7 @@ interface WishFormPayload {
   teacher: string
 }
 
-type SubmissionState = 'idle' | 'submitting' | 'success' | 'failure'
+type SubmissionState = 'idle' | 'submitting' | 'success'
 
 const emit = defineEmits<{
   close: []
@@ -26,7 +26,7 @@ const form = reactive<WishFormPayload>({
 })
 
 const submissionState = ref<SubmissionState>('idle')
-const failureReason = ref('')
+const showErrorToast = ref(false)
 const videoRef = ref<HTMLVideoElement | null>(null)
 
 onMounted(async () => {
@@ -82,25 +82,20 @@ async function handleSubmit() {
     teacher: form.teacher.trim(),
   }
   submissionState.value = 'submitting'
-  failureReason.value = ''
   try {
     await wishStore.createWish(payload)
     submissionState.value = 'success'
     emit('submit', payload)
   }
-  catch (e) {
-    submissionState.value = 'failure'
-    failureReason.value = e instanceof ApiError ? e.message : '許願失敗，請稍後再試'
+  catch {
+    submissionState.value = 'idle'
+    showErrorToast.value = true
   }
-}
-
-function handleRetry() {
-  submissionState.value = 'idle'
-  failureReason.value = ''
 }
 </script>
 
 <template>
+  <ErrorToast :visible="showErrorToast" @close="showErrorToast = false" />
   <Teleport to="body">
     <Transition name="wish-fade">
       <div v-show="true" class="wish-overlay" @click="handleOverlayClick">
@@ -144,31 +139,6 @@ function handleRetry() {
                 <button class="wish-toast__result-btn" type="button" @click="emit('close')">
                   太棒了！
                 </button>
-              </div>
-              <div
-                v-else-if="submissionState === 'failure'"
-                key="failure"
-                class="wish-toast__result wish-toast__result--failure"
-                role="alert"
-                aria-live="assertive"
-              >
-                <div class="wish-toast__result-icon wish-toast__result-icon--failure">
-                  ✕
-                </div>
-                <p class="wish-toast__result-text">
-                  許願失敗
-                </p>
-                <p v-if="failureReason" class="wish-toast__result-reason">
-                  {{ failureReason }}
-                </p>
-                <div class="wish-toast__result-actions">
-                  <button class="wish-toast__result-btn wish-toast__result-btn--secondary" type="button" @click="handleRetry">
-                    再試一次
-                  </button>
-                  <button class="wish-toast__result-btn" type="button" @click="emit('close')">
-                    關閉
-                  </button>
-                </div>
               </div>
               <form
                 v-else
@@ -381,78 +351,6 @@ function handleRetry() {
   font-weight: 800;
   color: var(--color-text-primary);
   margin-bottom: var(--spacing-md);
-}
-
-.wish-toast__result--failure {
-  /* reserved for future failure animation */
-}
-
-.wish-toast__result-icon {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto var(--spacing-md);
-  border-radius: 50%;
-  background: var(--color-accent-secondary);
-  color: white;
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform var(--transition-fast);
-}
-
-.wish-toast__result-icon--failure {
-  background: var(--color-danger, #e53e3e);
-}
-
-.wish-toast__result-text {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  line-height: 1.7;
-  margin: 0 auto var(--spacing-sm);
-}
-
-.wish-toast__result-reason {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  line-height: 1.5;
-  margin: 0 auto var(--spacing-md);
-  max-width: 320px;
-}
-
-.wish-toast__result-actions {
-  display: flex;
-  gap: var(--spacing-sm);
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: var(--spacing-md);
-}
-
-.wish-toast__result-btn {
-  padding: 10px var(--spacing-xl);
-  border-radius: var(--radius-full);
-  background: var(--color-accent-primary);
-  color: white;
-  font-weight: 600;
-  font-size: var(--font-size-sm);
-  transition: all var(--transition-fast);
-}
-
-.wish-toast__result-btn:hover {
-  background: var(--color-text-primary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.wish-toast__result-btn--secondary {
-  background: var(--color-background-alt);
-  color: var(--color-text-primary);
-}
-
-.wish-toast__result-btn--secondary:hover {
-  background: var(--color-text-muted);
-  color: white;
 }
 
 .wish-fade-enter-active,

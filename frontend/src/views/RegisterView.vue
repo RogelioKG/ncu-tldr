@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import ErrorToast from '@/components/ErrorToast.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 const studentIdRegex = /^\d{9}@cc\.ncu\.edu\.tw$/
@@ -13,6 +14,7 @@ const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const errorMsg = ref('')
+const showErrorToast = ref(false)
 
 async function handleSubmit() {
   errorMsg.value = ''
@@ -54,12 +56,13 @@ async function handleSubmit() {
     router.push('/login')
   }
   catch {
-    errorMsg.value = '註冊失敗，請稍後再試'
+    showErrorToast.value = true
   }
 }
 </script>
 
 <template>
+  <ErrorToast :visible="showErrorToast" @close="showErrorToast = false" />
   <div class="auth-page">
     <div class="auth-card">
       <h1 class="auth-card__heading">
