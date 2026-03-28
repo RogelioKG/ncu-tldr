@@ -1,13 +1,17 @@
 name: ncu-tldr-prod
 services:
   db:
+    container_name: ncu-tldr-prod-db
     image: postgres:18-alpine
     restart: unless-stopped
 
   frontend:
+    container_name: ncu-tldr-prod-frontend
     build:
       dockerfile: Dockerfile
       target: prod
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     restart: unless-stopped
     ports:
       - "80:8080"
@@ -15,6 +19,7 @@ services:
       - backend
 
   backend:
+    container_name: ncu-tldr-prod-backend
     build:
       dockerfile: Dockerfile
       target: prod

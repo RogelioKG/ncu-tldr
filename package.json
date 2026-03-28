@@ -5,12 +5,12 @@
 	"type": "module",
 	"scripts": {
 		"prepare": "husky",
-		"docker:dev:watch": "docker compose -f docker-compose.yml -f docker-compose.dev.yml watch",
-		"docker:dev:build": "docker compose -f docker-compose.yml -f docker-compose.dev.yml build",
-		"docker:dev:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml down",
-		"docker:prod:up": "docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d",
-		"docker:prod:build": "docker compose -f docker-compose.yml -f docker-compose.prod.yml build",
-		"docker:prod:down": "docker compose -f docker-compose.yml -f docker-compose.prod.yml down"
+		"docker:dev:watch": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.example watch",
+		"docker:dev:build": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.example build",
+		"docker:dev:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.example down",
+		"docker:prod:up": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env up -d",
+		"docker:prod:build": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env build",
+		"docker:prod:down": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env down"
 	},
 	"devDependencies": {
 		"husky": "^9.1.7"

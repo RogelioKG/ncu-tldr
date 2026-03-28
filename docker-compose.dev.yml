@@ -1,18 +1,21 @@
 name: ncu-tldr-dev
 services:
   db:
+    container_name: ncu-tldr-dev-db
     image: postgres:18
     ports:
       - "5432:5432"
 
   frontend:
+    container_name: ncu-tldr-dev-frontend
     build:
       dockerfile: Dockerfile
       target: dev
     ports:
       - "5173:5173"
     environment:
-      - CHOKIDAR_USEPOLLING=true
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+      CHOKIDAR_USEPOLLING: true
     develop:
       watch:
         - action: rebuild
@@ -34,6 +37,7 @@ services:
           target: /app/vite.config.ts
 
   backend:
+    container_name: ncu-tldr-dev-backend
     build:
       dockerfile: Dockerfile
       target: dev

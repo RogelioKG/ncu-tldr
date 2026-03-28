@@ -22,7 +22,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = Field(default="HS256")
     jwt_expire_minutes: int = Field(default=60 * 24 * 7)
 
-    database_url: str = Field(...)
+    database_url: str = Field(
+        default="postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/ncu_tldr"
+    )
 
 
 @lru_cache(maxsize=1)

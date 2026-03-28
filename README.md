@@ -93,12 +93,12 @@ NCU-TLDR/
 
 3. **初始化資料庫**
    ```bash
-   cd backend
-   uv run alembic upgrade head
+   docker exec -it ncu-tldr-dev-backend alembic upgrade head
    ```
 
 4. **獲取測試資料 SQL 腳本**
    ```bash
+   cd backend
    uv run scripts/extract_from_json.py --input scripts/all.json --out-dir scripts/seeds
    ```
 

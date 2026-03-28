@@ -20,6 +20,10 @@ CMD ["pnpm", "run", "dev", "--host"]
 
 FROM base AS build
 
+ARG VITE_API_BASE_URL
+
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+
 COPY package.json pnpm-lock.yaml* ./
 
 RUN pnpm install --frozen-lockfile
