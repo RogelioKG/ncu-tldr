@@ -1,75 +1,63 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    CheckConstraint,
     DateTime,
-    ForeignKey,
-    Index,
     Integer,
-    Numeric,
     SmallInteger,
-    String,
+    Text,
     UniqueConstraint,
     text,
 )
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+course_type_enum = ENUM(
+    "REQUIRED", "ELECTIVE", name="course_type_enum", create_type=False
+)
 
 
 class Course(Base):
     __tablename__ = "courses"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    department_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("departments.id", ondelete="RESTRICT"),
-        nullable=False,
+    external_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    class_no: Mapped[str] = mapped_column(Text, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    credit: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    password_card: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'NONE'")
     )
-    teacher_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("teachers.id", ondelete="RESTRICT"),
-        nullable=False,
-    )
-    course_code: Mapped[str] = mapped_column(String(20), nullable=False)
-    name: Mapped[str] = mapped_column(String(200), nullable=False)
-    credits: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    course_type: Mapped[str] = mapped_column(String(20), nullable=False)
-    schedule: Mapped[str | None] = mapped_column(String(100))
-    last_offered_semester: Mapped[str | None] = mapped_column(String(20))
-    avg_reward: Mapped[float] = mapped_column(
-        Numeric(3, 2), nullable=False, server_default=text("0")
-    )
-    avg_score: Mapped[float] = mapped_column(
-        Numeric(3, 2), nullable=False, server_default=text("0")
-    )
-    avg_easiness: Mapped[float] = mapped_column(
-        Numeric(3, 2), nullable=False, server_default=text("0")
-    )
-    avg_teacher_style: Mapped[float] = mapped_column(
-        Numeric(3, 2), nullable=False, server_default=text("0")
-    )
-    avg_overall: Mapped[float] = mapped_column(
-        Numeric(3, 2), nullable=False, server_default=text("0")
-    )
-    review_count: Mapped[int] = mapped_column(
+    limit_cnt: Mapped[int | None] = mapped_column(Integer)
+    admit_cnt: Mapped[int] = mapped_column(
         Integer, nullable=False, server_default=text("0")
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()")
+    wait_cnt: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
     )
+    course_type: Mapped[str] = mapped_column(course_type_enum, nullable=False)
+    last_semester: Mapped[str | None] = mapped_column(Text)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
 
-    department: Mapped["Department"] = relationship(back_populates="courses")  # type: ignore[name-defined]  # noqa: F821
-    teacher: Mapped["Teacher"] = relationship(back_populates="courses")  # type: ignore[name-defined]  # noqa: F821
-    wishes: Mapped[list["Wish"]] = relationship(back_populates="course")  # type: ignore[name-defined]  # noqa: F821
-    comments: Mapped[list["Comment"]] = relationship(back_populates="course")  # type: ignore[name-defined]  # noqa: F821
+    course_teachers: Mapped[list["CourseTeacher"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        back_populates="course", cascade="all, delete-orphan"
+    )
+    course_times: Mapped[list["CourseTime"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        back_populates="course", cascade="all, delete-orphan"
+    )
+    course_departments: Mapped[list["CourseDepartment"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        back_populates="course", cascade="all, delete-orphan"
+    )
+    course_colleges: Mapped[list["CourseCollege"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        back_populates="course", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
-        UniqueConstraint("course_code", "teacher_id", name="uq_courses_code_teacher"),
-        Index("idx_courses_department", "department_id"),
-        Index("idx_courses_teacher", "teacher_id"),
-        Index("idx_courses_name", "name"),
-        Index("idx_courses_avg_overall", avg_overall.desc()),
+        UniqueConstraint("external_id", name="uq_courses_external_id"),
+        UniqueConstraint("class_no"),
+        CheckConstraint("credit >= 0", name="ck_courses_credit_nonnegative"),
     )

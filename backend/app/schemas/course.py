@@ -1,40 +1,27 @@
-from __future__ import annotations
-
-from pydantic import BaseModel, Field
-
-from app.schemas.common import CourseRatings
-from app.schemas.review import Review
+from pydantic import BaseModel
 
 
-class GradingItem(BaseModel):
-    label: str
-    percentage: int
+class CourseTimeOut(BaseModel):
+    day: int
+    period: str
 
 
-class CourseSummary(BaseModel):
-    overview: str
-    targetAudience: str
-    textbook: str
-    prerequisites: str
-    weeklyHours: str
-    gradingItems: list[GradingItem]
-    notes: str
-    reviewCount: int
-
-
-class Course(BaseModel):
+class CourseOut(BaseModel):
     id: int
-    name: str
-    teacher: str
-    tags: list[str]
-    ratings: CourseRatings
-    department: str | None = None
-    code: str | None = None
-    time: str | None = None
-    credits: int | None = None
-    type: str | None = None
-    summary: CourseSummary | None = None
-    comments: list[Review] = Field(default_factory=list)
+    externalId: int
+    classNo: str
+    title: str
+    credit: int
+    passwordCard: str
+    limitCnt: int | None
+    admitCnt: int
+    waitCnt: int
+    courseType: str
+    lastSemester: str | None
+    teachers: list[str]
+    departments: list[str]
+    colleges: list[str]
+    times: list[CourseTimeOut]
 
 
 class CoursePair(BaseModel):

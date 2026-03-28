@@ -3,70 +3,78 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import selectinload
 
 from app.db.deps import get_db
 from app.models.course import Course as CourseModel
+from app.models.course_teacher import CourseTeacher
 from app.models.teacher import Teacher
-from app.schemas.common import CourseRatings
-from app.schemas.course import Course, CoursePair, CoursePairsResponse
+from app.schemas.course import CourseOut, CoursePair, CoursePairsResponse, CourseTimeOut
 
 router = APIRouter(prefix="/courses", tags=["courses"])
 
 _SORT_FIELD_MAP: dict[str, str] = {
-    "reward": "avg_reward",
-    "score": "avg_score",
-    "easiness": "avg_easiness",
-    "teacherStyle": "avg_teacher_style",
-    "overall": "avg_overall",
+    "title": "title",
+    "credit": "credit",
+    "updatedAt": "updated_at",
 }
 
 
-def _to_course_schema(row: CourseModel) -> Course:
-    return Course(
+def _to_course_schema(row: CourseModel) -> CourseOut:
+    teachers = sorted(row.course_teachers, key=lambda ct: ct.sort_order or 0)
+    return CourseOut(
         id=row.id,
-        name=row.name,
-        teacher=row.teacher.name if row.teacher else "",
-        tags=[],
-        ratings=CourseRatings(
-            reward=float(row.avg_reward),
-            score=float(row.avg_score),
-            easiness=float(row.avg_easiness),
-            teacherStyle=float(row.avg_teacher_style),
-        ),
-        department=row.department.name if row.department else None,
-        code=row.course_code,
-        time=row.schedule,
-        credits=row.credits,
-        type=row.course_type,
+        externalId=row.external_id,
+        classNo=row.class_no,
+        title=row.title,
+        credit=row.credit,
+        passwordCard=row.password_card,
+        limitCnt=row.limit_cnt,
+        admitCnt=row.admit_cnt,
+        waitCnt=row.wait_cnt,
+        courseType=row.course_type,
+        lastSemester=row.last_semester,
+        teachers=[ct.teacher.name for ct in teachers],
+        departments=[cd.department.name for cd in row.course_departments],
+        colleges=[cc.college.name for cc in row.course_colleges],
+        times=[CourseTimeOut(day=ct.day, period=ct.period) for ct in row.course_times],
     )
 
 
-@router.get("", response_model=list[Course])
+@router.get("", response_model=list[CourseOut])
 async def get_courses(
     q: str | None = Query(default=None, description="Search keyword"),
     sort: str | None = Query(
         default=None,
-        description="Sort: overall, reward, score, easiness, teacherStyle (append :asc for ascending)",
+        description="Sort: title, credit, updatedAt (append :asc for ascending)",
     ),
     db: AsyncSession = Depends(get_db),
-) -> list[Course]:
+) -> list[CourseOut]:
+    from app.models.course_college import CourseCollege
+    from app.models.course_department import CourseDepartment
+
     stmt = select(CourseModel).options(
-        joinedload(CourseModel.teacher), joinedload(CourseModel.department)
+        selectinload(CourseModel.course_teachers).joinedload(CourseTeacher.teacher),
+        selectinload(CourseModel.course_departments).joinedload(
+            CourseDepartment.department
+        ),
+        selectinload(CourseModel.course_colleges).joinedload(CourseCollege.college),
+        selectinload(CourseModel.course_times),
     )
 
     if q:
         keyword = f"%{q.strip()}%"
         stmt = stmt.where(
-            CourseModel.name.ilike(keyword) | Teacher.name.ilike(keyword)
-        ).join(Teacher, CourseModel.teacher_id == Teacher.id)
-    else:
-        stmt = stmt.join(Teacher, CourseModel.teacher_id == Teacher.id)
+            CourseModel.title.ilike(keyword)
+            | CourseModel.course_teachers.any(
+                CourseTeacher.teacher.has(Teacher.name.ilike(keyword))
+            )
+        )
 
-    sort_field_name, reverse = _parse_sort(sort)
-    db_col_name = _SORT_FIELD_MAP.get(sort_field_name, "avg_overall")
+    sort_field_name, descending = _parse_sort(sort)
+    db_col_name = _SORT_FIELD_MAP.get(sort_field_name, "title")
     col = getattr(CourseModel, db_col_name)
-    stmt = stmt.order_by(col.desc() if reverse else col.asc())
+    stmt = stmt.order_by(col.desc() if descending else col.asc())
 
     result = await db.execute(stmt)
     rows = result.unique().scalars().all()
@@ -79,28 +87,39 @@ async def get_course_pairs(
     db: AsyncSession = Depends(get_db),
 ) -> CoursePairsResponse:
     stmt = (
-        select(CourseModel.name, Teacher.name.label("teacher_name"))
-        .join(Teacher, CourseModel.teacher_id == Teacher.id)
+        select(CourseModel.title, Teacher.name.label("teacher_name"))
+        .join(CourseTeacher, CourseModel.id == CourseTeacher.course_id)
+        .join(Teacher, CourseTeacher.teacher_id == Teacher.id)
         .distinct()
-        .order_by(CourseModel.name, Teacher.name)
+        .order_by(CourseModel.title, Teacher.name)
     )
     result = await db.execute(stmt)
     pairs = [
-        CoursePair(courseName=row.name, teacher=row.teacher_name)
+        CoursePair(courseName=row.title, teacher=row.teacher_name)
         for row in result.all()
     ]
     response.headers["Cache-Control"] = "public, max-age=3600"
     return CoursePairsResponse(pairs=pairs)
 
 
-@router.get("/{course_id}", response_model=Course)
+@router.get("/{course_id}", response_model=CourseOut)
 async def get_course_by_id(
     course_id: int,
     db: AsyncSession = Depends(get_db),
-) -> Course:
+) -> CourseOut:
+    from app.models.course_college import CourseCollege
+    from app.models.course_department import CourseDepartment
+
     stmt = (
         select(CourseModel)
-        .options(joinedload(CourseModel.teacher), joinedload(CourseModel.department))
+        .options(
+            selectinload(CourseModel.course_teachers).joinedload(CourseTeacher.teacher),
+            selectinload(CourseModel.course_departments).joinedload(
+                CourseDepartment.department
+            ),
+            selectinload(CourseModel.course_colleges).joinedload(CourseCollege.college),
+            selectinload(CourseModel.course_times),
+        )
         .where(CourseModel.id == course_id)
     )
     result = await db.execute(stmt)
@@ -112,7 +131,7 @@ async def get_course_by_id(
 
 def _parse_sort(sort: str | None) -> tuple[str, bool]:
     if not sort:
-        return "overall", True
+        return "title", False
     normalized = sort.strip()
     if ":" in normalized:
         field, direction = normalized.split(":", 1)

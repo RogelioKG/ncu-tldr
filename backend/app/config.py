@@ -18,9 +18,6 @@ class Settings(BaseSettings):
         default=["http://localhost:5173", "http://127.0.0.1:5173"],
     )
 
-    jwt_secret_key: str = Field(default="change-me-in-production")
-    jwt_algorithm: str = Field(default="HS256")
-    jwt_expire_minutes: int = Field(default=60 * 24 * 7)
     x_sync_secret_key: str = Field(default="change-me-in-production")
 
     database_url: str = Field(...)
