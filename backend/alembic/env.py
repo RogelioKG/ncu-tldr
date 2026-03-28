@@ -1,19 +1,21 @@
 import asyncio
-import os
 from logging.config import fileConfig
 
-from dotenv import load_dotenv
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-load_dotenv()
+# Import settings at the top level for configurations to load from .env
+from app.config import get_settings
 
+settings = get_settings()
 config = context.config
 
-config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL_SYNC"])
+config.set_main_option(
+    "sqlalchemy.url", "postgresql+psycopg2://postgres:postgres@localhost:5432/ncu_tldr"
+)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -44,7 +46,7 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     cfg = config.get_section(config.config_ini_section, {})
-    cfg["sqlalchemy.url"] = os.environ["DATABASE_URL"]
+    cfg["sqlalchemy.url"] = settings.database_url
 
     connectable = async_engine_from_config(
         cfg,
