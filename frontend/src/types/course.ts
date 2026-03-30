@@ -97,8 +97,8 @@ export interface Course {
   teacher: string
   /** 課程標籤 */
   tags: string[]
-  /** 各項評分 */
-  ratings: CourseRatings
+  /** 各項評分（無評價資料時為 undefined） */
+  ratings?: CourseRatings
 
   /** 開課學期 (Optional for mock) */
   semester?: string

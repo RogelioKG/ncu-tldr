@@ -4,6 +4,8 @@ import { computed, ref } from 'vue'
 import { getCourseById, getCourses } from '@/api/courses'
 
 function getSortValue(course: Course, field: SortCriterion['field']): number {
+  if (!course.ratings)
+    return 0
   if (field === 'overall') {
     const { easiness, reward, score, teacherStyle } = course.ratings
     return (reward + score + easiness + teacherStyle) / 4

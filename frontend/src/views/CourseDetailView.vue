@@ -78,10 +78,10 @@ async function handleSubmitReview(payload: {
   const reviewCount = selected.summary?.reviewCount ?? 0
   const nextCount = reviewCount + 1
   const nextRatings = {
-    reward: Number((((selected.ratings.reward * reviewCount) + payload.ratings.reward) / nextCount).toFixed(2)),
-    score: Number((((selected.ratings.score * reviewCount) + payload.ratings.score) / nextCount).toFixed(2)),
-    easiness: Number((((selected.ratings.easiness * reviewCount) + payload.ratings.easiness) / nextCount).toFixed(2)),
-    teacherStyle: Number((((selected.ratings.teacherStyle * reviewCount) + payload.ratings.teacherStyle) / nextCount).toFixed(2)),
+    reward: Number(((((selected.ratings?.reward ?? 0) * reviewCount) + payload.ratings.reward) / nextCount).toFixed(2)),
+    score: Number(((((selected.ratings?.score ?? 0) * reviewCount) + payload.ratings.score) / nextCount).toFixed(2)),
+    easiness: Number(((((selected.ratings?.easiness ?? 0) * reviewCount) + payload.ratings.easiness) / nextCount).toFixed(2)),
+    teacherStyle: Number(((((selected.ratings?.teacherStyle ?? 0) * reviewCount) + payload.ratings.teacherStyle) / nextCount).toFixed(2)),
   }
   await reviewStore.submitReview(courseId.value, {
     user: authStore.displayName || '匿名同學',

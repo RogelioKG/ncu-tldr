@@ -79,7 +79,7 @@ function handleClick() {
         </span>
       </div>
 
-      <div class="course-card__ratings">
+      <div v-if="props.course.ratings" class="course-card__ratings">
         <StarRating
           :rating="props.course.ratings.reward"
           label="收穫"

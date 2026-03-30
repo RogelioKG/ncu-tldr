@@ -106,7 +106,7 @@ function handleSubmitReview(payload: {
         <!-- 左側欄：課程基本資訊 + 星星評價 -->
         <aside class="cdp__sidebar">
           <CourseBasicInfo :course="course" />
-          <CourseStarEvaluation :ratings="course.ratings" />
+          <CourseStarEvaluation v-if="course.ratings" :ratings="course.ratings" />
         </aside>
 
         <!-- 右側欄：AI 摘要 + 留言 -->

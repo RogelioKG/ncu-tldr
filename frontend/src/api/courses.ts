@@ -1,14 +1,14 @@
 import type { Course } from '@/types'
 import { mockCourses } from '@/mock/courses'
-import { hasBackendApi, request } from './client'
+import { ApiError, hasBackendApi, request } from './client'
 
-/** Backend CourseOut shape returned by the API */
-interface CourseTimeOut {
+/** Raw shape returned by the backend API */
+interface RawCourseTime {
   day: number
   period: string
 }
 
-interface CourseOut {
+interface RawCourse {
   id: number
   externalId: number
   classNo: string
@@ -23,12 +23,12 @@ interface CourseOut {
   teachers: string[]
   departments: string[]
   colleges: string[]
-  times: CourseTimeOut[]
+  times: RawCourseTime[]
 }
 
 const DAY_LABELS = ['', '一', '二', '三', '四', '五', '六', '日']
 
-function formatTimes(times: CourseTimeOut[]): string {
+function formatTimes(times: RawCourseTime[]): string {
   if (times.length === 0)
     return ''
   const grouped = new Map<number, string[]>()
@@ -41,13 +41,12 @@ function formatTimes(times: CourseTimeOut[]): string {
     .join(' / ')
 }
 
-function mapCourseOutToCourse(raw: CourseOut): Course {
+function normalizeApiCourse(raw: RawCourse): Course {
   return {
     id: raw.id,
     name: raw.title,
     teacher: raw.teachers.join('、'),
     tags: [raw.courseType === 'REQUIRED' ? '必修' : '選修', ...raw.departments],
-    ratings: { reward: 0, score: 0, easiness: 0, teacherStyle: 0 },
     semester: raw.lastSemester ?? undefined,
     department: raw.departments.join('、'),
     code: raw.classNo,
@@ -67,8 +66,8 @@ export async function getCourses(params?: { q?: string, sort?: string }): Promis
       query.set('sort', params.sort)
     }
     const suffix = query.toString() ? `?${query.toString()}` : ''
-    const raw = await request<CourseOut[]>(`/api/courses${suffix}`)
-    return raw.map(mapCourseOutToCourse)
+    const raw = await request<RawCourse[]>(`/api/courses${suffix}`)
+    return raw.map(normalizeApiCourse)
   }
 
   const keyword = params?.q?.trim().toLowerCase() ?? ''
@@ -85,11 +84,13 @@ export async function getCourses(params?: { q?: string, sort?: string }): Promis
 export async function getCourseById(courseId: number): Promise<Course | null> {
   if (hasBackendApi()) {
     try {
-      const raw = await request<CourseOut>(`/api/courses/${courseId}`)
-      return mapCourseOutToCourse(raw)
+      const raw = await request<RawCourse>(`/api/courses/${courseId}`)
+      return normalizeApiCourse(raw)
     }
-    catch {
-      return null
+    catch (err) {
+      if (err instanceof ApiError && err.status === 404)
+        return null
+      throw err
     }
   }
   return mockCourses.find(course => course.id === courseId) ?? null
