@@ -2,63 +2,80 @@
 set -e
 
 # Colors
-RED='\033[1;31m'
-GREEN='\033[1;32m'
-BLUE='\033[1;34m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+R='\033[1;31m'
+G='\033[1;32m'
+B='\033[1;34m'
+Y='\033[1;33m'
+N='\033[0m'
 
 print_msg() {
-    printf "$1$2${NC}\n"
+    printf "$1$2${N}\n"
 }
 
-print_msg "$GREEN" "🚀 [Pre-commit] Starting Checks..."
+run_checks() {
+    DIR="$1"
+    LABEL="$2"
+    LINT_CMD="$3"
+    FIX_CMD="$4"
+    FORMAT_CMD="$5"
+    FORMAT_FIX_CMD="$6"
 
-# Check if backend files are changed
-if git diff --cached --name-only | grep -q "^backend/"; then
-    print_msg "$BLUE" "🔄 [Backend] Checking..."
-    cd backend
+    cd "$DIR"
+    FAILED=0
 
-    RUFF_FAILED=0
-
-    # Lint Check
-    if ! uv run ruff check .; then
-        RUFF_FAILED=1
-        echo ""
-        print_msg "$YELLOW" "💡 [Backend] To auto-fix lint issues, run:"
-        print_msg "$NC" "    cd backend && uv run ruff check --fix . && cd .."
+    print_msg "$B" "🔄 [${LABEL}] Linting..."
+    if [ -n "$LINT_CMD" ]; then
+        if ! sh -c "$LINT_CMD"; then
+            FAILED=1
+            echo ""
+            print_msg "$Y" "💡 [${LABEL}] To automatically fix lint issues, run:"
+            print_msg "$N" "    $FIX_CMD"
+        fi
     fi
 
-    # Format Check
-    if ! uv run ruff format --check .; then
-        RUFF_FAILED=1
-        echo ""
-        print_msg "$YELLOW" "💡 [Backend] To auto-fix formatting, run:"
-        print_msg "$NC" "    cd backend && uv run ruff format . && cd .."
+    if [ -n "$FORMAT_CMD" ]; then
+        print_msg "$B" "🔄 [${LABEL}] Formatting..."
+        if ! sh -c "$FORMAT_CMD"; then
+            FAILED=1
+            echo ""
+            print_msg "$Y" "💡 [${LABEL}] To automatically fix formatting issues, run:"
+            print_msg "$N" "    $FORMAT_FIX_CMD"
+        fi
     fi
 
-    if [ "$RUFF_FAILED" -eq 1 ]; then
+    if [ "$FAILED" -eq 1 ]; then
         echo ""
-        print_msg "$RED" "❌ [Backend] Ruff checks failed. Please fix the issues above and re-commit."
+        print_msg "$R" "❌ [${LABEL}] Checks failed. Fix the issues above, then re-commit."
         exit 1
     fi
 
     cd ..
+}
+
+print_msg "$G" "🚀 [Pre-commit] Starting checks..."
+
+if git diff --cached --name-only | grep -q "^backend/"; then
+    run_checks \
+        "backend" \
+        "Backend" \
+        "pnpm run backend:lint" \
+        "pnpm run backend:lint:fix" \
+        "pnpm run backend:format" \
+        "pnpm run backend:format:fix"
 else
-    print_msg "$YELLOW" "⏭️  [Backend] No changes detected, skipping..."
+    print_msg "$Y" "⏭️  [Backend] No changes detected. Skipping..."
 fi
 
-# Check if frontend files are changed
 if git diff --cached --name-only | grep -q "^frontend/"; then
-    print_msg "$BLUE" "🔄 [Frontend] Checking..."
-    cd frontend
-
-    # Lint Check
-    pnpm run lint
-
-    cd ..
+    run_checks \
+        "frontend" \
+        "Frontend" \
+        "pnpm run lint" \
+        "pnpm run frontend:lint:fix" \
+        "" \
+        ""
 else
-    print_msg "$YELLOW" "⏭️  [Frontend] No changes detected, skipping..."
+    print_msg "$Y" "⏭️  [Frontend] No changes detected. Skipping..."
 fi
 
-print_msg "$GREEN" "✅ [Pre-commit] All checks passed! Committing..."
+print_msg "$G" "✅ [Pre-commit] All checks passed. Committing..."

@@ -25,16 +25,26 @@ dev = [
     "ruff>=0.15.2",
 ]
 
-# [tool.ruff.lint]
-# select = [
-#     "E",  # pycodestyle errors
-#     "W",  # pycodestyle warnings
-#     "F",  # pyflakes
-#     "I",  # isort
-#     "C",  # flake8-comprehensions
-#     "B",  # flake8-bugbear
-#     "UP", # pyupgrade
-# ]
+[tool.ruff]
+line-length = 140
+extend-exclude = ["alembic"]
 
-# [tool.ruff.format]
-# quote-style = "double"
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "UP", # pyupgrade
+]
+ignore = [
+    "B008", # function-call-in-default-argument
+    "C901", # complex-structure
+]
+
+[tool.ruff.format]
+indent-style = "space"
+line-ending = "lf"
+quote-style = "double"

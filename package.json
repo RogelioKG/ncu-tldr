@@ -10,7 +10,13 @@
 		"docker:dev:down": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --env-file .env.example down",
 		"docker:prod:up": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env up -d",
 		"docker:prod:build": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env build",
-		"docker:prod:down": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env down"
+		"docker:prod:down": "docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env down",
+		"frontend:lint": "pnpm -C frontend exec eslint",
+		"frontend:lint:fix": "pnpm -C frontend exec eslint --fix",
+		"backend:lint": "pushd backend && uv run ruff check . && popd",
+		"backend:lint:fix": "pushd backend && uv run ruff check --fix . && popd",
+		"backend:format": "pushd backend && uv run ruff format --check . && popd",
+		"backend:format:fix": "pushd backend && uv run ruff format . && popd"
 	},
 	"devDependencies": {
 		"husky": "^9.1.7"
