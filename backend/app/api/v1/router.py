@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import admin, auth, courses, comments, reviews, wishlist
+from app.api.v1.endpoints import admin, auth, comments, courses, reviews, wishlist
 
 api_router = APIRouter(prefix="/v1")
 

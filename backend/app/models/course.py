@@ -36,30 +36,14 @@ class Course(Base):
     course_type: Mapped[str] = mapped_column(String(20), nullable=False)
     schedule: Mapped[str | None] = mapped_column(String(100))
     last_offered_semester: Mapped[str | None] = mapped_column(String(20))
-    avg_reward: Mapped[float] = mapped_column(
-        Numeric(3, 2), nullable=False, server_default=text("0")
-    )
-    avg_score: Mapped[float] = mapped_column(
-        Numeric(3, 2), nullable=False, server_default=text("0")
-    )
-    avg_easiness: Mapped[float] = mapped_column(
-        Numeric(3, 2), nullable=False, server_default=text("0")
-    )
-    avg_teacher_style: Mapped[float] = mapped_column(
-        Numeric(3, 2), nullable=False, server_default=text("0")
-    )
-    avg_overall: Mapped[float] = mapped_column(
-        Numeric(3, 2), nullable=False, server_default=text("0")
-    )
-    review_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default=text("0")
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()")
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()")
-    )
+    avg_reward: Mapped[float] = mapped_column(Numeric(3, 2), nullable=False, server_default=text("0"))
+    avg_score: Mapped[float] = mapped_column(Numeric(3, 2), nullable=False, server_default=text("0"))
+    avg_easiness: Mapped[float] = mapped_column(Numeric(3, 2), nullable=False, server_default=text("0"))
+    avg_teacher_style: Mapped[float] = mapped_column(Numeric(3, 2), nullable=False, server_default=text("0"))
+    avg_overall: Mapped[float] = mapped_column(Numeric(3, 2), nullable=False, server_default=text("0"))
+    review_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
 
     department: Mapped["Department"] = relationship(back_populates="courses")  # type: ignore[name-defined]  # noqa: F821
     teacher: Mapped["Teacher"] = relationship(back_populates="courses")  # type: ignore[name-defined]  # noqa: F821

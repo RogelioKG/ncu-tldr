@@ -58,29 +58,15 @@ async def create_wish(
             "Invalid course-teacher pair",
         )
 
-    result = await db.execute(
-        select(Wish).where(
-            Wish.course_name == payload.name, Wish.teacher == payload.teacher
-        )
-    )
+    result = await db.execute(select(Wish).where(Wish.course_name == payload.name, Wish.teacher == payload.teacher))
     existing = result.scalar_one_or_none()
 
     if existing is not None:
-        already_voted = await db.execute(
-            select(WishVote).where(
-                WishVote.wish_id == existing.id, WishVote.user_id == user.id
-            )
-        )
+        already_voted = await db.execute(select(WishVote).where(WishVote.wish_id == existing.id, WishVote.user_id == user.id))
         if already_voted.scalar_one_or_none() is None:
             db.add(WishVote(wish_id=existing.id, user_id=user.id))
             await db.flush()
-            count = (
-                await db.execute(
-                    select(func.count())
-                    .select_from(WishVote)
-                    .where(WishVote.wish_id == existing.id)
-                )
-            ).scalar_one()
+            count = (await db.execute(select(func.count()).select_from(WishVote).where(WishVote.wish_id == existing.id))).scalar_one()
             existing.vote_count = count
             await db.commit()
             await db.refresh(existing)
@@ -111,25 +97,17 @@ async def toggle_vote(
     if wish is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Wish not found")
 
-    existing_vote = await db.execute(
-        select(WishVote).where(WishVote.wish_id == wish_id, WishVote.user_id == user.id)
-    )
+    existing_vote = await db.execute(select(WishVote).where(WishVote.wish_id == wish_id, WishVote.user_id == user.id))
     vote = existing_vote.scalar_one_or_none()
 
     if vote is not None:
-        await db.execute(
-            delete(WishVote).where(
-                WishVote.wish_id == wish_id, WishVote.user_id == user.id
-            )
-        )
+        await db.execute(delete(WishVote).where(WishVote.wish_id == wish_id, WishVote.user_id == user.id))
     else:
         db.add(WishVote(wish_id=wish_id, user_id=user.id))
 
     await db.flush()
 
-    count_result = await db.execute(
-        select(func.count()).select_from(WishVote).where(WishVote.wish_id == wish_id)
-    )
+    count_result = await db.execute(select(func.count()).select_from(WishVote).where(WishVote.wish_id == wish_id))
     wish.vote_count = count_result.scalar_one()
     await db.commit()
     await db.refresh(wish)

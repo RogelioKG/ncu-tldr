@@ -1,8 +1,9 @@
 import argparse
 import json
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 _VALID_COURSE_TYPES = frozenset({"REQUIRED", "ELECTIVE"})
 
@@ -43,9 +44,7 @@ def _parse_day_period(token: str) -> tuple[int | None, str | None]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Extract seed SQL files from all.json (v2 format) for migration-ordered imports."
-    )
+    parser = argparse.ArgumentParser(description="Extract seed SQL files from all.json (v2 format) for migration-ordered imports.")
     parser.add_argument(
         "--input",
         type=Path,
@@ -79,15 +78,11 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # M1: colleges
-    college_rows = [
-        [c["collegeId"], c["collegeName"]] for c in colleges if c.get("collegeId")
-    ]
+    college_rows = [[c["collegeId"], c["collegeName"]] for c in colleges if c.get("collegeId")]
     colleges_sql = (
         "BEGIN;\n\n"
         "INSERT INTO colleges (code, name)\n"
-        "VALUES\n  "
-        + _sql_values_rows(college_rows)
-        + "\nON CONFLICT (code) DO UPDATE SET\n"
+        "VALUES\n  " + _sql_values_rows(college_rows) + "\nON CONFLICT (code) DO UPDATE SET\n"
         "  name = EXCLUDED.name;\n\n"
         "COMMIT;\n"
     )
@@ -95,35 +90,27 @@ def main() -> int:
 
     # M2: departments
     dept_seed_rows = [
-        [d["departmentId"], d["departmentName"], d["collegeId"]]
-        for d in departments
-        if d.get("departmentId") and d.get("collegeId")
+        [d["departmentId"], d["departmentName"], d["collegeId"]] for d in departments if d.get("departmentId") and d.get("collegeId")
     ]
     departments_sql = (
         "BEGIN;\n\n"
         "INSERT INTO departments (code, name, college_id)\n"
         "SELECT v.code, v.name, c.id\n"
         "FROM (\n"
-        "  VALUES\n  "
-        + _sql_values_rows(dept_seed_rows)
-        + "\n) AS v(code, name, college_code)\n"
+        "  VALUES\n  " + _sql_values_rows(dept_seed_rows) + "\n) AS v(code, name, college_code)\n"
         "JOIN colleges c ON c.code = v.college_code\n"
         "ON CONFLICT (code) DO UPDATE SET\n"
         "  name = EXCLUDED.name,\n"
         "  college_id = EXCLUDED.college_id;\n\n"
         "COMMIT;\n"
     )
-    (out_dir / "departments_seed.generated.sql").write_text(
-        departments_sql, encoding="utf-8"
-    )
+    (out_dir / "departments_seed.generated.sql").write_text(departments_sql, encoding="utf-8")
 
     # M3: teachers
     teachers_sql = (
         "BEGIN;\n\n"
         "INSERT INTO teachers (name)\n"
-        "VALUES\n  "
-        + _sql_values_rows([[t] for t in teachers])
-        + "\nON CONFLICT (name) DO NOTHING;\n\n"
+        "VALUES\n  " + _sql_values_rows([[t] for t in teachers]) + "\nON CONFLICT (name) DO NOTHING;\n\n"
         "COMMIT;\n"
     )
     (out_dir / "teachers_seed.generated.sql").write_text(teachers_sql, encoding="utf-8")
@@ -147,9 +134,7 @@ def main() -> int:
         if credit is None:
             errors.append(f"course missing credit: serialNo={serial_no!r}")
         if course_type not in _VALID_COURSE_TYPES:
-            errors.append(
-                f"course has invalid courseType={course_type!r}: serialNo={serial_no!r}"
-            )
+            errors.append(f"course has invalid courseType={course_type!r}: serialNo={serial_no!r}")
 
         course_rows.append(
             [
@@ -186,9 +171,7 @@ def main() -> int:
         "  course_type,\n"
         "  last_semester\n"
         ")\n"
-        "VALUES\n  "
-        + _sql_values_rows(course_rows)
-        + "\nON CONFLICT (external_id) DO UPDATE SET\n"
+        "VALUES\n  " + _sql_values_rows(course_rows) + "\nON CONFLICT (external_id) DO UPDATE SET\n"
         "  class_no = EXCLUDED.class_no,\n"
         "  title = EXCLUDED.title,\n"
         "  credit = EXCLUDED.credit,\n"
@@ -242,9 +225,7 @@ def main() -> int:
             "INSERT INTO course_teachers (course_id, teacher_id, sort_order)\n"
             "SELECT c.id, t.id, v.sort_order\n"
             "FROM (\n"
-            "  VALUES\n  "
-            + _sql_values_rows(ct_rows)
-            + "\n) AS v(course_external_id, teacher_name, sort_order)\n"
+            "  VALUES\n  " + _sql_values_rows(ct_rows) + "\n) AS v(course_external_id, teacher_name, sort_order)\n"
             "JOIN courses c ON c.external_id = v.course_external_id\n"
             "JOIN teachers t ON t.name = v.teacher_name\n"
             "ON CONFLICT (course_id, teacher_id) DO UPDATE SET\n"
@@ -256,9 +237,7 @@ def main() -> int:
             "INSERT INTO course_times (course_id, day, period)\n"
             "SELECT c.id, v.day, v.period\n"
             "FROM (\n"
-            "  VALUES\n  "
-            + _sql_values_rows(time_rows)
-            + "\n) AS v(course_external_id, day, period)\n"
+            "  VALUES\n  " + _sql_values_rows(time_rows) + "\n) AS v(course_external_id, day, period)\n"
             "JOIN courses c ON c.external_id = v.course_external_id\n"
             "ON CONFLICT (course_id, day, period) DO NOTHING;\n\n"
         )
@@ -268,9 +247,7 @@ def main() -> int:
             "INSERT INTO course_departments (course_id, department_id)\n"
             "SELECT c.id, d.id\n"
             "FROM (\n"
-            "  VALUES\n  "
-            + _sql_values_rows(dept_rows)
-            + "\n) AS v(course_external_id, department_code)\n"
+            "  VALUES\n  " + _sql_values_rows(dept_rows) + "\n) AS v(course_external_id, department_code)\n"
             "JOIN courses c ON c.external_id = v.course_external_id\n"
             "JOIN departments d ON d.code = v.department_code\n"
             "ON CONFLICT (course_id, department_id) DO NOTHING;\n\n"
@@ -281,18 +258,14 @@ def main() -> int:
             "INSERT INTO course_colleges (course_id, college_id)\n"
             "SELECT c.id, col.id\n"
             "FROM (\n"
-            "  VALUES\n  "
-            + _sql_values_rows(college_rows)
-            + "\n) AS v(course_external_id, college_code)\n"
+            "  VALUES\n  " + _sql_values_rows(college_rows) + "\n) AS v(course_external_id, college_code)\n"
             "JOIN courses c ON c.external_id = v.course_external_id\n"
             "JOIN colleges col ON col.code = v.college_code\n"
             "ON CONFLICT (course_id, college_id) DO NOTHING;\n\n"
         )
 
     relations_parts.append("COMMIT;\n")
-    (out_dir / "course_relations_seed.generated.sql").write_text(
-        "".join(relations_parts), encoding="utf-8"
-    )
+    (out_dir / "course_relations_seed.generated.sql").write_text("".join(relations_parts), encoding="utf-8")
 
     # M6: metadata
     meta = raw.get("meta", {})

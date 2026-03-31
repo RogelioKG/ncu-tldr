@@ -1,5 +1,6 @@
 import sys
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 _VALID_COURSE_TYPES = frozenset({"REQUIRED", "ELECTIVE"})
 
@@ -57,30 +58,22 @@ def generate_course_sync_sql(raw: dict) -> list[str]:
     sql_statements: list[str] = []
 
     # M1: colleges
-    college_rows = [
-        [c["collegeId"], c["collegeName"]] for c in colleges if c.get("collegeId")
-    ]
+    college_rows = [[c["collegeId"], c["collegeName"]] for c in colleges if c.get("collegeId")]
     if college_rows:
         sql_statements.append(
             "INSERT INTO colleges (code, name)\n"
-            "VALUES\n  "
-            + _sql_values_rows(college_rows)
-            + "\nON CONFLICT (code) DO UPDATE SET\n  name = EXCLUDED.name;\n"
+            "VALUES\n  " + _sql_values_rows(college_rows) + "\nON CONFLICT (code) DO UPDATE SET\n  name = EXCLUDED.name;\n"
         )
 
     # M2: departments
     dept_seed_rows = [
-        [d["departmentId"], d["departmentName"], d["collegeId"]]
-        for d in departments
-        if d.get("departmentId") and d.get("collegeId")
+        [d["departmentId"], d["departmentName"], d["collegeId"]] for d in departments if d.get("departmentId") and d.get("collegeId")
     ]
     if dept_seed_rows:
         sql_statements.append(
             "INSERT INTO departments (code, name, college_id)\n"
             "SELECT v.code, v.name, c.id\n"
-            "FROM (\n  VALUES\n  "
-            + _sql_values_rows(dept_seed_rows)
-            + "\n) AS v(code, name, college_code)\n"
+            "FROM (\n  VALUES\n  " + _sql_values_rows(dept_seed_rows) + "\n) AS v(code, name, college_code)\n"
             "JOIN colleges c ON c.code = v.college_code\n"
             "ON CONFLICT (code) DO UPDATE SET\n"
             "  name = EXCLUDED.name,\n  college_id = EXCLUDED.college_id;\n"
@@ -89,10 +82,7 @@ def generate_course_sync_sql(raw: dict) -> list[str]:
     # M3: teachers
     if teachers:
         sql_statements.append(
-            "INSERT INTO teachers (name)\n"
-            "VALUES\n  "
-            + _sql_values_rows([[t] for t in teachers])
-            + "\nON CONFLICT (name) DO NOTHING;\n"
+            "INSERT INTO teachers (name)\nVALUES\n  " + _sql_values_rows([[t] for t in teachers]) + "\nON CONFLICT (name) DO NOTHING;\n"
         )
 
     # M4: courses
@@ -114,9 +104,7 @@ def generate_course_sync_sql(raw: dict) -> list[str]:
         if credit is None:
             errors.append(f"course missing credit: serialNo={serial_no!r}")
         if course_type not in _VALID_COURSE_TYPES:
-            errors.append(
-                f"course has invalid courseType={course_type!r}: serialNo={serial_no!r}"
-            )
+            errors.append(f"course has invalid courseType={course_type!r}: serialNo={serial_no!r}")
 
         course_rows.append(
             [
@@ -143,9 +131,7 @@ def generate_course_sync_sql(raw: dict) -> list[str]:
             "INSERT INTO courses (\n"
             "  external_id, class_no, title, credit, password_card, limit_cnt,\n"
             "  admit_cnt, wait_cnt, course_type, last_semester\n"
-            ")\nVALUES\n  "
-            + _sql_values_rows(course_rows)
-            + "\nON CONFLICT (external_id) DO UPDATE SET\n"
+            ")\nVALUES\n  " + _sql_values_rows(course_rows) + "\nON CONFLICT (external_id) DO UPDATE SET\n"
             "  class_no = EXCLUDED.class_no,\n  title = EXCLUDED.title,\n"
             "  credit = EXCLUDED.credit,\n  password_card = EXCLUDED.password_card,\n"
             "  limit_cnt = EXCLUDED.limit_cnt,\n  admit_cnt = EXCLUDED.admit_cnt,\n"
@@ -186,9 +172,7 @@ def generate_course_sync_sql(raw: dict) -> list[str]:
         sql_statements.append(
             "INSERT INTO course_teachers (course_id, teacher_id, sort_order)\n"
             "SELECT c.id, t.id, v.sort_order\n"
-            "FROM (\n  VALUES\n  "
-            + _sql_values_rows(ct_rows)
-            + "\n) AS v(course_external_id, teacher_name, sort_order)\n"
+            "FROM (\n  VALUES\n  " + _sql_values_rows(ct_rows) + "\n) AS v(course_external_id, teacher_name, sort_order)\n"
             "JOIN courses c ON c.external_id = v.course_external_id\n"
             "JOIN teachers t ON t.name = v.teacher_name\n"
             "ON CONFLICT (course_id, teacher_id) DO UPDATE SET\n"
@@ -199,9 +183,7 @@ def generate_course_sync_sql(raw: dict) -> list[str]:
         sql_statements.append(
             "INSERT INTO course_times (course_id, day, period)\n"
             "SELECT c.id, v.day, v.period\n"
-            "FROM (\n  VALUES\n  "
-            + _sql_values_rows(time_rows)
-            + "\n) AS v(course_external_id, day, period)\n"
+            "FROM (\n  VALUES\n  " + _sql_values_rows(time_rows) + "\n) AS v(course_external_id, day, period)\n"
             "JOIN courses c ON c.external_id = v.course_external_id\n"
             "ON CONFLICT (course_id, day, period) DO NOTHING;\n"
         )
@@ -210,9 +192,7 @@ def generate_course_sync_sql(raw: dict) -> list[str]:
         sql_statements.append(
             "INSERT INTO course_departments (course_id, department_id)\n"
             "SELECT c.id, d.id\n"
-            "FROM (\n  VALUES\n  "
-            + _sql_values_rows(dept_rows)
-            + "\n) AS v(course_external_id, department_code)\n"
+            "FROM (\n  VALUES\n  " + _sql_values_rows(dept_rows) + "\n) AS v(course_external_id, department_code)\n"
             "JOIN courses c ON c.external_id = v.course_external_id\n"
             "JOIN departments d ON d.code = v.department_code\n"
             "ON CONFLICT (course_id, department_id) DO NOTHING;\n"
@@ -222,9 +202,7 @@ def generate_course_sync_sql(raw: dict) -> list[str]:
         sql_statements.append(
             "INSERT INTO course_colleges (course_id, college_id)\n"
             "SELECT c.id, col.id\n"
-            "FROM (\n  VALUES\n  "
-            + _sql_values_rows(college_rows)
-            + "\n) AS v(course_external_id, college_code)\n"
+            "FROM (\n  VALUES\n  " + _sql_values_rows(college_rows) + "\n) AS v(course_external_id, college_code)\n"
             "JOIN courses c ON c.external_id = v.course_external_id\n"
             "JOIN colleges col ON col.code = v.college_code\n"
             "ON CONFLICT (course_id, college_id) DO NOTHING;\n"

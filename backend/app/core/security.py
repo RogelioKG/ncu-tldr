@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import bcrypt
 from jose import JWTError, jwt
@@ -18,9 +16,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_access_token(sub: str, expires_delta: timedelta | None = None) -> str:
     settings = get_settings()
-    expire = datetime.now(timezone.utc) + (
-        expires_delta or timedelta(minutes=settings.jwt_expire_minutes)
-    )
+    expire = datetime.now(UTC) + (expires_delta or timedelta(minutes=settings.jwt_expire_minutes))
     return jwt.encode(
         {"sub": sub, "exp": expire},
         settings.jwt_secret_key,
@@ -32,9 +28,7 @@ def decode_access_token(token: str) -> str | None:
     """Return the `sub` claim (user-id) or *None* on any failure."""
     settings = get_settings()
     try:
-        payload = jwt.decode(
-            token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
-        )
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
         return payload.get("sub")
     except JWTError:
         return None

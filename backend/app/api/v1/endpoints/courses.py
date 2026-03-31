@@ -49,15 +49,11 @@ async def get_courses(
     ),
     db: AsyncSession = Depends(get_db),
 ) -> list[Course]:
-    stmt = select(CourseModel).options(
-        joinedload(CourseModel.teacher), joinedload(CourseModel.department)
-    )
+    stmt = select(CourseModel).options(joinedload(CourseModel.teacher), joinedload(CourseModel.department))
 
     if q:
         keyword = f"%{q.strip()}%"
-        stmt = stmt.where(
-            CourseModel.name.ilike(keyword) | Teacher.name.ilike(keyword)
-        ).join(Teacher, CourseModel.teacher_id == Teacher.id)
+        stmt = stmt.where(CourseModel.name.ilike(keyword) | Teacher.name.ilike(keyword)).join(Teacher, CourseModel.teacher_id == Teacher.id)
     else:
         stmt = stmt.join(Teacher, CourseModel.teacher_id == Teacher.id)
 
@@ -83,10 +79,7 @@ async def get_course_pairs(
         .order_by(CourseModel.name, Teacher.name)
     )
     result = await db.execute(stmt)
-    pairs = [
-        CoursePair(courseName=row.name, teacher=row.teacher_name)
-        for row in result.all()
-    ]
+    pairs = [CoursePair(courseName=row.name, teacher=row.teacher_name) for row in result.all()]
     response.headers["Cache-Control"] = "public, max-age=3600"
     return CoursePairsResponse(pairs=pairs)
 
@@ -97,9 +90,7 @@ async def get_course_by_id(
     db: AsyncSession = Depends(get_db),
 ) -> Course:
     stmt = (
-        select(CourseModel)
-        .options(joinedload(CourseModel.teacher), joinedload(CourseModel.department))
-        .where(CourseModel.id == course_id)
+        select(CourseModel).options(joinedload(CourseModel.teacher), joinedload(CourseModel.department)).where(CourseModel.id == course_id)
     )
     result = await db.execute(stmt)
     row = result.unique().scalar_one_or_none()

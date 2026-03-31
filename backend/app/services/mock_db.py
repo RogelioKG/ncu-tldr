@@ -153,9 +153,7 @@ class MockDB:
             courses = [
                 c
                 for c in courses
-                if keyword in c["name"].lower()
-                or keyword in c["teacher"].lower()
-                or any(keyword in tag.lower() for tag in c["tags"])
+                if keyword in c["name"].lower() or keyword in c["teacher"].lower() or any(keyword in tag.lower() for tag in c["tags"])
             ]
 
         sort_field, reverse = self._parse_sort(sort)
@@ -177,10 +175,7 @@ class MockDB:
 
     def get_reviews(self, course_id: int) -> list[Review]:
         course = self.get_course(course_id)
-        return [
-            Review.model_validate(self._strip_review_rating(r))
-            for r in course["comments"]
-        ]
+        return [Review.model_validate(self._strip_review_rating(r)) for r in course["comments"]]
 
     def add_review(self, course_id: int, payload: ReviewCreate) -> Review:
         with self._lock:
@@ -239,9 +234,7 @@ class MockDB:
             detail=f"Wish {wish_id} not found",
         )
 
-    def register(
-        self, email: str, password: str, display_name: str
-    ) -> tuple[str, UserResponse]:
+    def register(self, email: str, password: str, display_name: str) -> tuple[str, UserResponse]:
         with self._lock:
             if email in self._users:
                 raise HTTPException(
@@ -315,12 +308,7 @@ class MockDB:
     def _course_sort_value(course: dict, sort_field: str) -> float:
         ratings = course["ratings"]
         if sort_field == "overall":
-            return (
-                ratings["reward"]
-                + ratings["score"]
-                + ratings["easiness"]
-                + ratings["teacherStyle"]
-            ) / 4
+            return (ratings["reward"] + ratings["score"] + ratings["easiness"] + ratings["teacherStyle"]) / 4
         if sort_field in ratings:
             return ratings[sort_field]
         return 0.0
@@ -333,9 +321,7 @@ class MockDB:
         reward = sum(c["ratings"]["reward"] for c in comments) / len(comments)
         score = sum(c["ratings"]["score"] for c in comments) / len(comments)
         easiness = sum(c["ratings"]["easiness"] for c in comments) / len(comments)
-        teacher_style = sum(c["ratings"]["teacherStyle"] for c in comments) / len(
-            comments
-        )
+        teacher_style = sum(c["ratings"]["teacherStyle"] for c in comments) / len(comments)
         course["ratings"] = {
             "reward": round(reward, 2),
             "score": round(score, 2),

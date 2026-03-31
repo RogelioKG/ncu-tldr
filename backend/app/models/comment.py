@@ -37,21 +37,11 @@ class Comment(Base):
     )
     title: Mapped[str | None] = mapped_column(String(200))
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    likes: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default=text("0")
-    )
-    dislikes: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default=text("0")
-    )
-    is_deleted: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default=text("false")
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()")
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()")
-    )
+    likes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    dislikes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
 
     course: Mapped["Course"] = relationship(back_populates="comments")  # type: ignore[name-defined]  # noqa: F821
     user: Mapped["User"] = relationship(back_populates="comments")  # type: ignore[name-defined]  # noqa: F821

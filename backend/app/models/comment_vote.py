@@ -30,9 +30,7 @@ class CommentVote(Base):
         primary_key=True,
     )
     vote_type: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()")
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
 
     user: Mapped["User"] = relationship(back_populates="comment_votes")  # type: ignore[name-defined]  # noqa: F821
     comment: Mapped["Comment"] = relationship(back_populates="comment_votes")  # type: ignore[name-defined]  # noqa: F821

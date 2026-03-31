@@ -21,9 +21,7 @@ class WishVote(Base):
         ForeignKey("wishes.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()")
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
 
     user: Mapped["User"] = relationship(back_populates="wish_votes")  # type: ignore[name-defined]  # noqa: F821
     wish: Mapped["Wish"] = relationship(back_populates="wish_votes")  # type: ignore[name-defined]  # noqa: F821

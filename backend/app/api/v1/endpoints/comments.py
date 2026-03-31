@@ -28,9 +28,7 @@ async def get_comments(
     db: AsyncSession = Depends(get_db),
 ) -> list[CommentOut]:
     result = await db.execute(
-        select(Comment)
-        .where(Comment.course_id == course_id, Comment.is_deleted.is_(False))
-        .order_by(Comment.created_at.desc()),
+        select(Comment).where(Comment.course_id == course_id, Comment.is_deleted.is_(False)).order_by(Comment.created_at.desc()),
     )
     rows = result.scalars().all()
     return [

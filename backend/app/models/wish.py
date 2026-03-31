@@ -26,17 +26,13 @@ class Wish(Base):
     )
     course_name: Mapped[str] = mapped_column(String(200), nullable=False)
     teacher: Mapped[str] = mapped_column(String(100), nullable=False)
-    vote_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default=text("0")
-    )
+    vote_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     created_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=text("now()")
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=text("now()"))
 
     creator: Mapped["User"] = relationship(back_populates="wishes")  # type: ignore[name-defined]  # noqa: F821
     course: Mapped["Course | None"] = relationship(back_populates="wishes")  # type: ignore[name-defined]  # noqa: F821
