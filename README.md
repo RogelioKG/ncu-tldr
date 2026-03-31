@@ -15,8 +15,6 @@
 - **⚖️ 權重機制**：引入動態可信度演算法，優質評論自動獲得更高影響力。
 - **⚡ 極簡填寫**：隨意輸入心得，AI 自動幫你分類標籤與結構化。
 
----
-
 ## ✨ 重點功能
 
 - **AI 課程小卡**：主頁快速顯示星等、甜涼度與 AI 自動生成的 `#Hashtag`。
@@ -76,66 +74,94 @@ NCU-TLDR/
 - **pnpm**: v9+
 - **uv**: v0.9+
 
-### 安裝步驟
+### 開發配置
 
-本專案已配置好完整的 Docker 環境，並支援熱重載 (Hot Reload)，建議直接透過 Docker 進行開發。
+本專案已配置好完整的 **Docker** 環境，並支援 **Hot Reload**。
 
 1. **Clone 專案**
-   ```bash
-   git clone https://github.com/RogelioKG/ncu-tldr.git
-   cd ncu-tldr
-   ```
+    ```bash
+    git clone https://github.com/RogelioKG/ncu-tldr.git
+    cd ncu-tldr
+    ```
 
 2. **啟動開發環境**
-   ```bash
-   pnpm run docker:dev:watch
-   ```
+    ```bash
+    pnpm run docker:dev:watch
+    ```
 
 3. **資料庫初始化**
-   ```
-   docker exec -it ncu-tldr-dev-backend alembic upgrade head
-   ```
+    ```
+    docker exec -it ncu-tldr-dev-backend alembic upgrade head
+    ```
 
 4. **資料庫灌入資料**
-   ```bash
-   cd ./backend/scripts
-   curl -X POST http://localhost:8000/api/v1/admin/sync -H "X-SYNC-SECRET-KEY: change-me-in-production" -H "Content-Type: application/json" -d "@all.json"
-   ```
+    ```bash
+    cd ./backend/scripts
+    curl -X POST http://localhost:8000/api/v1/admin/sync -H "X-SYNC-SECRET-KEY: change-me-in-production" -H "Content-Type: application/json" -d "@all.json"
+    ```
 
 5. **開始開發**
-   - 前端：[http://localhost:5173](http://localhost:5173)
-   - 後端 API 文檔：[http://localhost:8000/docs](http://localhost:8000/docs)
+    - 前端：[http://localhost:5173](http://localhost:5173)
+    - 後端 API 文檔：[http://localhost:8000/docs](http://localhost:8000/docs)
 
-## 🐳 Docker
+### 代碼品質
 
-本專案採用 **Multi-stage Build** 與 **Compose Watch**。
+1. **Linting**
+   - Check
+        ```bash
+        pnpm run frontend:lint
+        ```
+        ```bash
+        pnpm run backend:lint
+        ```
+   - Fix
+        ```bash
+        pnpm run frontend:lint:fix
+        ```
+        ```bash
+        pnpm run backend:lint:fix
+        ```
 
-### 開發環境 (dev)
-+ 啟動 (熱重載)
-   ```bash
-   pnpm run docker:dev:watch
-   ```
-+ 關閉 (移除容器)
-   ```bash
-   pnpm run docker:dev:down
-   ```
+2. **Formating**
+   - Check
+        ```bash
+        pnpm run backend:lint
+        ```
+   - Fix
+        ```bash
+        pnpm run backend:lint:fix
+        ```
 
-### 正式環境 (prod)
-+ 啟動
-   ```bash
-   pnpm run docker:prod:up
-   ```
-+ 關閉 (移除容器)
-   ```bash
-   pnpm run docker:prod:down
-   ```
+### Docker
+
+本專案採用 **Nulti-stage Build** 與 **Compose Watch**。
+
+- 開發環境 (dev)
+    - 啟動 (hot reload)
+        ```bash
+        pnpm run docker:dev:watch
+        ```
+    - 關閉 (remove container)
+        ```bash
+        pnpm run docker:dev:down
+        ```
+
+- 正式環境 (prod)
+    - 啟動
+        ```bash
+        pnpm run docker:prod:up
+        ```
+    - 關閉 (remove container)
+        ```bash
+        pnpm run docker:prod:down
+        ```
 
 ## 🤝 參與貢獻
 
 我們非常歡迎任何形式的貢獻！無論是回報 Bug、提出新功能建議，或是直接提交 PR。
 
 1. Fork 本專案
-2. 建立您的 Feature Branch (`git checkout -b feature/AmazingFeature`)
+2. 建立您的 Feature Branch (`git switch -c feature/AmazingFeature`)
 3. 提交您的修改 (`git commit -m 'Add some AmazingFeature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 開啟 Pull Request
