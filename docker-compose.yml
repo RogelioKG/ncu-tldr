@@ -12,12 +12,6 @@ services:
       timeout: 5s
       retries: 20
 
-  frontend:
-    build:
-      context: ./frontend/
-    depends_on:
-      - backend
-
   backend:
     build:
       context: ./backend/
@@ -25,8 +19,22 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       X_SYNC_SECRET_KEY: ${X_SYNC_SECRET_KEY}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\""]
+      interval: 60s
+      timeout: 5s
+      retries: 10
+      start_interval: 5s
+      start_period: 30s
     depends_on:
       db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend/
+    depends_on:
+      backend:
         condition: service_healthy
 
 volumes:

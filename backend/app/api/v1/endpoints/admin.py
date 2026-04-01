@@ -30,11 +30,6 @@ async def sync_courses_task(raw_json: dict):
         break
 
 
-@router.get("/health")
-async def health() -> dict[str, str]:
-    return {"status": "ok"}
-
-
 @router.post("/sync", status_code=202, dependencies=[Depends(verify_sync_secret_key)])
 async def sync_courses(background_tasks: BackgroundTasks, payload: dict = Body(...)):
     background_tasks.add_task(sync_courses_task, payload)
