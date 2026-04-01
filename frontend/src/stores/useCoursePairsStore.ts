@@ -23,7 +23,7 @@ export const useCoursePairsStore = defineStore('coursePairs', () => {
     isLoading.value = true
     try {
       if (hasBackendApi()) {
-        const data = await request<CoursePairsResponse>('/api/courses/pairs')
+        const data = await request<CoursePairsResponse>('/courses/pairs')
         pairs.value = data.pairs
       }
       else {

@@ -28,7 +28,7 @@ const mockUsers = new Map<string, { id: string, password: string, displayName: s
 
 export async function login(payload: LoginPayload): Promise<AuthResult> {
   if (hasBackendApi()) {
-    return await request<AuthResult>('/api/auth/login', {
+    return await request<AuthResult>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
@@ -52,7 +52,7 @@ export async function login(payload: LoginPayload): Promise<AuthResult> {
 
 export async function register(payload: RegisterPayload): Promise<AuthResult> {
   if (hasBackendApi()) {
-    return await request<AuthResult>('/api/auth/register', {
+    return await request<AuthResult>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
@@ -81,7 +81,7 @@ export async function register(payload: RegisterPayload): Promise<AuthResult> {
 
 export async function getMe(token: string): Promise<AuthUser> {
   if (hasBackendApi()) {
-    return await request<AuthUser>('/api/auth/me', { token })
+    return await request<AuthUser>('/auth/me', { token })
   }
   const email = [...mockUsers.keys()][0] ?? ''
   const row = mockUsers.get(email)

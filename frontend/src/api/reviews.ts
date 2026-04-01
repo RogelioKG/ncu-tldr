@@ -11,7 +11,7 @@ export interface CreateReviewPayload {
 
 export async function getReviews(courseId: number): Promise<CourseComment[]> {
   if (hasBackendApi()) {
-    return await request<CourseComment[]>(`/api/courses/${courseId}/reviews`)
+    return await request<CourseComment[]>(`/courses/${courseId}/reviews`)
   }
   const course = mockCourses.find(row => row.id === courseId)
   return course?.comments ? [...course.comments] : []
@@ -19,7 +19,7 @@ export async function getReviews(courseId: number): Promise<CourseComment[]> {
 
 export async function createReview(courseId: number, payload: CreateReviewPayload): Promise<CourseComment> {
   if (hasBackendApi()) {
-    return await request<CourseComment>(`/api/courses/${courseId}/reviews`, {
+    return await request<CourseComment>(`/courses/${courseId}/reviews`, {
       method: 'POST',
       body: JSON.stringify(payload),
     })

@@ -4,7 +4,7 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_get_reviews(client: AsyncClient) -> None:
-    response = await client.get("/api/courses/1/reviews")
+    response = await client.get("/api/v1/courses/1/reviews")
     assert response.status_code == 200
     payload = response.json()
     assert isinstance(payload, list)
@@ -14,7 +14,7 @@ async def test_get_reviews(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_create_review(client: AsyncClient) -> None:
     response = await client.post(
-        "/api/courses/1/reviews",
+        "/api/v1/courses/1/reviews",
         json={
             "user": "Tester",
             "title": "有收穫",
@@ -31,7 +31,7 @@ async def test_create_review(client: AsyncClient) -> None:
     payload = response.json()
     assert payload["user"] == "Tester"
 
-    reviews_response = await client.get("/api/courses/1/reviews")
+    reviews_response = await client.get("/api/v1/courses/1/reviews")
     assert reviews_response.status_code == 200
     assert len(reviews_response.json()) == 3
 
@@ -39,7 +39,7 @@ async def test_create_review(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_create_review_course_not_found(client: AsyncClient) -> None:
     response = await client.post(
-        "/api/courses/999/reviews",
+        "/api/v1/courses/999/reviews",
         json={
             "user": "Tester",
             "title": "測試",
@@ -58,7 +58,7 @@ async def test_create_review_course_not_found(client: AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_create_review_validation_error(client: AsyncClient) -> None:
     response = await client.post(
-        "/api/courses/1/reviews",
+        "/api/v1/courses/1/reviews",
         json={
             "user": "Tester",
             "title": "",

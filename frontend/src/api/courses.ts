@@ -12,7 +12,7 @@ export async function getCourses(params?: { q?: string, sort?: string }): Promis
       query.set('sort', params.sort)
     }
     const suffix = query.toString() ? `?${query.toString()}` : ''
-    return await request<Course[]>(`/api/courses${suffix}`)
+    return await request<Course[]>(`/courses${suffix}`)
   }
 
   const keyword = params?.q?.trim().toLowerCase() ?? ''
@@ -29,7 +29,7 @@ export async function getCourses(params?: { q?: string, sort?: string }): Promis
 export async function getCourseById(courseId: number): Promise<Course | null> {
   if (hasBackendApi()) {
     try {
-      return await request<Course>(`/api/courses/${courseId}`)
+      return await request<Course>(`/courses/${courseId}`)
     }
     catch {
       return null

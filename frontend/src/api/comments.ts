@@ -11,7 +11,7 @@ export async function getComments(courseId: number): Promise<CourseComment[]> {
   if (!hasBackendApi())
     return []
   const raw = await request<Array<CourseComment & { parentId?: number }>>(
-    `/api/courses/${courseId}/comments`,
+    `/courses/${courseId}/comments`,
   )
   return raw.map(row => ({
     id: row.id,
@@ -37,7 +37,7 @@ export async function createComment(
   if (payload.parentId != null)
     body.parentId = payload.parentId
   const created = await request<CourseComment & { parentId?: number }>(
-    `/api/courses/${courseId}/comments`,
+    `/courses/${courseId}/comments`,
     {
       method: 'POST',
       body: JSON.stringify(body),

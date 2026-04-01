@@ -9,14 +9,14 @@ export interface AddWishPayload {
 
 export async function getWishlist(): Promise<WishCourse[]> {
   if (hasBackendApi()) {
-    return await request<WishCourse[]>('/api/wishlist')
+    return await request<WishCourse[]>('/wishlist')
   }
   return mockWishList.map(row => ({ ...row, voteCount: 1 }))
 }
 
 export async function addWish(payload: AddWishPayload, token?: string): Promise<WishCourse> {
   if (hasBackendApi()) {
-    return await request<WishCourse>('/api/wishlist', {
+    return await request<WishCourse>('/wishlist', {
       method: 'POST',
       body: JSON.stringify(payload),
       token,
@@ -37,6 +37,6 @@ export async function addWish(payload: AddWishPayload, token?: string): Promise<
 
 export async function removeWish(wishId: number, token?: string): Promise<void> {
   if (hasBackendApi()) {
-    await request<void>(`/api/wishlist/${wishId}`, { method: 'DELETE', token })
+    await request<void>(`/wishlist/${wishId}`, { method: 'DELETE', token })
   }
 }
