@@ -60,7 +60,7 @@ NCU-TLDR/
 ├── docker-compose.dev.yml    # 選用：前端 hot reload 進階設定
 ├── docker-compose.prod.yml   # 生產環境覆寫（日後使用）
 ├── .dockerignore             # Docker build context 忽略規則
-├── pnpm-workspace.yaml       # Monorepo Workspace 設定
+├── pnpm-lock.yaml            # pnpm lockfile
 └── README.md                 # 專案說明文件
 ```
 
@@ -90,7 +90,7 @@ NCU-TLDR/
     ```
 
 3. **資料庫初始化**
-    ```
+    ```bash
     docker exec -it ncu-tldr-dev-backend alembic upgrade head
     ```
 
@@ -122,19 +122,19 @@ NCU-TLDR/
         pnpm run backend:lint:fix
         ```
 
-2. **Formating**
+2. **Formatting**
    - Check
         ```bash
-        pnpm run backend:lint
+        pnpm run backend:format
         ```
    - Fix
         ```bash
-        pnpm run backend:lint:fix
+        pnpm run backend:format:fix
         ```
 
 ### Docker
 
-本專案採用 **Nulti-stage Build** 與 **Compose Watch**。
+本專案採用 **Multi-stage Build** 與 **Compose Watch**。
 
 - 開發環境 (dev)
     - 啟動 (hot reload)
