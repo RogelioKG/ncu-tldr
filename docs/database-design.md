@@ -636,7 +636,6 @@ wishes
 | **課程開課紀錄** | 新增 `course_offerings(course_id, semester, schedule)` 追蹤逐學期開課紀錄 |
 | **通知系統** | 新增 `notifications` 表，追蹤留言回覆、投票通知 |
 | **檢舉機制** | 新增 `reports(target_type, target_id, reporter_id, reason)` 表 |
-| **評價可信度權重** | `users` 新增 `credibility_score`，用於加權平均星星評價 |
 
 ---
 
