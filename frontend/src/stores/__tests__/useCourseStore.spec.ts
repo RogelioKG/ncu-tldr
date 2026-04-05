@@ -55,7 +55,7 @@ describe('useCourseStore', () => {
 
   it('applies review ratings and increments review count', () => {
     const store = useCourseStore()
-    store.selectedCourse = {
+    store.courses = [{
       id: 1,
       name: '演算法',
       teacher: '王大明',
@@ -71,14 +71,15 @@ describe('useCourseStore', () => {
         notes: 'x',
         reviewCount: 3,
       },
-    }
+    }]
     store.applyReviewRatings(1, {
       reward: 4.5,
       score: 4.2,
       easiness: 3.8,
       teacherStyle: 4.6,
     })
-    expect(store.selectedCourse.ratings.reward).toBe(4.5)
-    expect(store.selectedCourse.summary?.reviewCount).toBe(4)
+    const updated = store.courses.find(c => c.id === 1)
+    expect(updated?.ratings?.reward).toBe(4.5)
+    expect(updated?.summary?.reviewCount).toBe(4)
   })
 })

@@ -1,7 +1,12 @@
 import type { Course } from '@/types'
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
+import CourseAISummary from '../CourseAISummary.vue'
+import CourseBasicInfo from '../CourseBasicInfo.vue'
+import CourseComments from '../CourseComments.vue'
 import CourseDetail from '../CourseDetail.vue'
+import CourseStarEvaluation from '../CourseStarEvaluation.vue'
 
 const mockCourse: Course = {
   id: 1,
@@ -38,27 +43,25 @@ const mockCourse: Course = {
 }
 
 describe('courseDetail', () => {
-  it('renders course name', () => {
-    const wrapper = mount(CourseDetail, {
-      props: { course: mockCourse },
+  function mountCourseDetail(course: Course = mockCourse) {
+    return mount(CourseDetail, {
+      props: { course },
       global: {
+        plugins: [createPinia()],
         stubs: {
           RouterLink: true,
         },
       },
     })
+  }
+
+  it('renders course name', () => {
+    const wrapper = mountCourseDetail()
     expect(wrapper.text()).toContain('資料結構')
   })
 
   it('renders course tags', () => {
-    const wrapper = mount(CourseDetail, {
-      props: { course: mockCourse },
-      global: {
-        stubs: {
-          RouterLink: true,
-        },
-      },
-    })
+    const wrapper = mountCourseDetail()
     expect(wrapper.text()).toContain('#必修')
     expect(wrapper.text()).toContain('#程式設計')
   })
@@ -68,102 +71,46 @@ describe('courseDetail', () => {
       ...mockCourse,
       tags: ['tag1', 'tag2', 'tag3', 'tag4', 'tag5', 'tag6', 'tag7', 'tag8'],
     }
-    const wrapper = mount(CourseDetail, {
-      props: { course: courseWithManyTags },
-      global: {
-        stubs: {
-          RouterLink: true,
-        },
-      },
-    })
+    const wrapper = mountCourseDetail(courseWithManyTags)
     const tags = wrapper.findAll('.cdp__tag')
     expect(tags.length).toBe(6)
   })
 
   it('renders search bar', () => {
-    const wrapper = mount(CourseDetail, {
-      props: { course: mockCourse },
-      global: {
-        stubs: {
-          RouterLink: true,
-        },
-      },
-    })
+    const wrapper = mountCourseDetail()
     expect(wrapper.find('.cdp__search-wrapper').exists()).toBe(true)
   })
 
   it('renders basic info component', () => {
-    const wrapper = mount(CourseDetail, {
-      props: { course: mockCourse },
-      global: {
-        stubs: {
-          RouterLink: true,
-        },
-      },
-    })
-    expect(wrapper.findComponent({ name: 'CourseBasicInfo' }).exists()).toBe(true)
+    const wrapper = mountCourseDetail()
+    expect(wrapper.findComponent(CourseBasicInfo).exists()).toBe(true)
   })
 
   it('renders star evaluation component', () => {
-    const wrapper = mount(CourseDetail, {
-      props: { course: mockCourse },
-      global: {
-        stubs: {
-          RouterLink: true,
-        },
-      },
-    })
-    expect(wrapper.findComponent({ name: 'CourseStarEvaluation' }).exists()).toBe(true)
+    const wrapper = mountCourseDetail()
+    expect(wrapper.findComponent(CourseStarEvaluation).exists()).toBe(true)
   })
 
   it('renders AI summary component', () => {
-    const wrapper = mount(CourseDetail, {
-      props: { course: mockCourse },
-      global: {
-        stubs: {
-          RouterLink: true,
-        },
-      },
-    })
-    expect(wrapper.findComponent({ name: 'CourseAISummary' }).exists()).toBe(true)
+    const wrapper = mountCourseDetail()
+    expect(wrapper.findComponent(CourseAISummary).exists()).toBe(true)
   })
 
   it('renders comments component', () => {
-    const wrapper = mount(CourseDetail, {
-      props: { course: mockCourse },
-      global: {
-        stubs: {
-          RouterLink: true,
-        },
-      },
-    })
-    expect(wrapper.findComponent({ name: 'CourseComments' }).exists()).toBe(true)
+    const wrapper = mountCourseDetail()
+    expect(wrapper.findComponent(CourseComments).exists()).toBe(true)
   })
 
   it('passes empty array to comments when no comments', () => {
     const courseWithoutComments = { ...mockCourse, comments: undefined }
-    const wrapper = mount(CourseDetail, {
-      props: { course: courseWithoutComments },
-      global: {
-        stubs: {
-          RouterLink: true,
-        },
-      },
-    })
-    const commentsComponent = wrapper.findComponent({ name: 'CourseComments' })
+    const wrapper = mountCourseDetail(courseWithoutComments)
+    const commentsComponent = wrapper.findComponent(CourseComments)
     expect(commentsComponent.props('comments')).toEqual([])
   })
 
   it('re-emits submit review from AI summary', async () => {
-    const wrapper = mount(CourseDetail, {
-      props: { course: mockCourse },
-      global: {
-        stubs: {
-          RouterLink: true,
-        },
-      },
-    })
-    const aiSummary = wrapper.findComponent({ name: 'CourseAISummary' })
+    const wrapper = mountCourseDetail()
+    const aiSummary = wrapper.findComponent(CourseAISummary)
     aiSummary.vm.$emit('submitReview', {
       title: 't',
       content: 'c',

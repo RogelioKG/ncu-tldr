@@ -1,6 +1,6 @@
 import type { Course } from '@/types'
 import { computed, ref } from 'vue'
-import { mockCourses } from '@/mock/courses'
+import { useCourseStore } from '@/stores/useCourseStore'
 
 export interface SavedCourseEntry {
   courseId: number
@@ -10,10 +10,12 @@ export interface SavedCourseEntry {
 const savedEntries = ref<SavedCourseEntry[]>([])
 
 export function useSavedCourses() {
+  const courseStore = useCourseStore()
+
   const savedCourses = computed<Course[]>(() => {
     const sorted = savedEntries.value.toSorted((a, b) => a.order - b.order)
     return sorted
-      .map(entry => mockCourses.find(c => c.id === entry.courseId))
+      .map(entry => courseStore.courses.find(c => c.id === entry.courseId))
       .filter((c): c is Course => c !== undefined)
   })
 

@@ -15,7 +15,10 @@ function getSortValue(course: Course, field: SortCriterion['field']): number {
 
 export const useCourseStore = defineStore('course', () => {
   const courses = ref<Course[]>([])
-  const selectedCourse = ref<Course | null>(null)
+  const selectedCourseId = ref<number | null>(null)
+  const selectedCourse = computed<Course | null>(() =>
+    courses.value.find(c => c.id === selectedCourseId.value) ?? null,
+  )
   const searchQuery = ref('')
   const sortCriteria = ref<SortCriterion[]>([
     { field: 'overall', label: '綜合平均', direction: 'desc', enabled: false },
@@ -67,7 +70,17 @@ export const useCourseStore = defineStore('course', () => {
   async function fetchCourseById(courseId: number): Promise<void> {
     isLoading.value = true
     try {
-      selectedCourse.value = await getCourseById(courseId)
+      const fetched = await getCourseById(courseId)
+      if (fetched) {
+        const idx = courses.value.findIndex(c => c.id === courseId)
+        if (idx >= 0) {
+          courses.value = courses.value.map(c => c.id === courseId ? fetched : c)
+        }
+        else {
+          courses.value = [...courses.value, fetched]
+        }
+        selectedCourseId.value = courseId
+      }
     }
     finally {
       isLoading.value = false
@@ -83,19 +96,17 @@ export const useCourseStore = defineStore('course', () => {
   }
 
   function applyReviewRatings(courseId: number, nextRatings: CourseRatings): void {
-    const target = courses.value.find(course => course.id === courseId)
-    if (target) {
-      target.ratings = { ...nextRatings }
-      if (target.summary) {
-        target.summary.reviewCount += 1
+    courses.value = courses.value.map((course) => {
+      if (course.id !== courseId)
+        return course
+      return {
+        ...course,
+        ratings: { ...nextRatings },
+        summary: course.summary
+          ? { ...course.summary, reviewCount: course.summary.reviewCount + 1 }
+          : course.summary,
       }
-    }
-    if (selectedCourse.value?.id === courseId) {
-      selectedCourse.value.ratings = { ...nextRatings }
-      if (selectedCourse.value.summary) {
-        selectedCourse.value.summary.reviewCount += 1
-      }
-    }
+    })
   }
 
   return {

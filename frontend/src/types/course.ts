@@ -2,6 +2,17 @@
  * 課程相關型別定義
  */
 
+/**
+ * 表單相關型別（從 Zod schema 推導）
+ * 這些型別由 @/schemas 統一管理，確保前後端驗證一致性
+ */
+export type {
+  CourseReviewInput,
+  LoginInput,
+  RegisterInput,
+  WishFormInput,
+} from '@/schemas'
+
 export interface CourseRatings {
   /** 收穫評分 (0-5) */
   reward: number
@@ -62,31 +73,7 @@ export interface CommentTreeNode {
   replies: CourseComment[]
 }
 
-export function buildCommentTree(
-  flat: CourseComment[],
-  sortByDate: (a: CourseComment, b: CourseComment) => number,
-  sortByPopular: (a: CourseComment, b: CourseComment) => number,
-  sortMode: 'date' | 'popular',
-): CommentTreeNode[] {
-  const roots = flat.filter(c => c.parentId == null)
-  const byParent = new Map<number, CourseComment[]>()
-  for (const c of flat) {
-    if (c.parentId != null) {
-      const list = byParent.get(c.parentId) ?? []
-      list.push(c)
-      byParent.set(c.parentId, list)
-    }
-  }
-  const cmp = sortMode === 'date' ? sortByDate : sortByPopular
-  roots.sort(cmp)
-  for (const list of byParent.values())
-    list.sort(sortByDate)
-
-  return roots.map(root => ({
-    root,
-    replies: (byParent.get(root.id) ?? []).sort(sortByDate),
-  }))
-}
+export { buildCommentTree } from '@/utils/commentTree'
 
 export interface Course {
   /** 課程唯一識別碼 */

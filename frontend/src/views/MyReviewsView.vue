@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useReviewStore } from '@/stores/useReviewStore'
+import { useDiscussionStore } from '@/stores/useDiscussionStore'
 
-const reviewStore = useReviewStore()
-const groupedReviews = computed(() => Object.entries(reviewStore.reviewsByCourse))
+const discussionStore = useDiscussionStore()
+const groupedReviews = computed(() => Object.entries(discussionStore.discussionsByCourse))
 </script>
 
 <template>
@@ -12,7 +12,7 @@ const groupedReviews = computed(() => Object.entries(reviewStore.reviewsByCourse
       我的評價
     </h1>
     <p class="my-reviews__subtitle">
-      目前共 {{ reviewStore.totalReviewCount }} 筆
+      目前共 {{ discussionStore.totalDiscussionCount }} 筆
     </p>
     <div v-if="groupedReviews.length === 0" class="my-reviews__empty">
       目前還沒有提交任何評價

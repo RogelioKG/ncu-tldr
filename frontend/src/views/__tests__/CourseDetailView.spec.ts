@@ -1,9 +1,44 @@
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
+import CourseDetail from '@/components/CourseDetail.vue'
 import CourseDetailView from '../CourseDetailView.vue'
 import HomeView from '../HomeView.vue'
+
+vi.mock('@/api/courses', () => ({
+  getCourses: vi.fn().mockResolvedValue([]),
+  getCourseById: vi.fn().mockImplementation((id: number) => {
+    if (id === 1) {
+      return Promise.resolve({
+        id: 1,
+        name: '演算法',
+        teacher: '王大明',
+        tags: ['必修'],
+        ratings: { reward: 4.5, score: 4, easiness: 3, teacherStyle: 4.5 },
+      })
+    }
+    if (id === 2) {
+      return Promise.resolve({
+        id: 2,
+        name: '動力學',
+        teacher: '廖老大',
+        tags: ['必修'],
+      })
+    }
+    return Promise.resolve(null)
+  }),
+}))
+
+vi.mock('@/api/reviews', () => ({
+  getReviews: vi.fn().mockResolvedValue([]),
+  createReview: vi.fn(),
+}))
+
+vi.mock('@/api/comments', () => ({
+  getComments: vi.fn().mockResolvedValue([]),
+  createComment: vi.fn(),
+}))
 
 describe('courseDetailView', () => {
   const createRouterMock = (initialRoute = '/course/1') => {
@@ -28,9 +63,8 @@ describe('courseDetailView', () => {
       },
     })
 
-    await wrapper.vm.$nextTick()
-    await new Promise(resolve => setTimeout(resolve, 0))
-    expect(wrapper.findComponent({ name: 'CourseDetail' }).exists()).toBe(true)
+    await flushPromises()
+    expect(wrapper.findComponent(CourseDetail).exists()).toBe(true)
   })
 
   it('shows not found message when course does not exist', async () => {

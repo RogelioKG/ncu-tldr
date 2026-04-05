@@ -1,18 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { hasBackendApi } from '@/api/client'
 import CourseDetail from '@/components/CourseDetail.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { useCommentStore } from '@/stores/useCommentStore'
 import { useCourseStore } from '@/stores/useCourseStore'
-import { useReviewStore } from '@/stores/useReviewStore'
+import { useDiscussionStore } from '@/stores/useDiscussionStore'
 
 const route = useRoute()
 const authStore = useAuthStore()
-const commentStore = useCommentStore()
 const courseStore = useCourseStore()
-const reviewStore = useReviewStore()
+const discussionStore = useDiscussionStore()
 
 const courseId = computed(() => {
   const id = route.params.id
@@ -22,14 +19,10 @@ const courseId = computed(() => {
 const course = computed(() => {
   const selected = courseStore.selectedCourse
   if (selected && selected.id === courseId.value) {
-    const comments = hasBackendApi()
-      ? commentStore.getCourseComments(selected.id)
-      : (reviewStore.getCourseReviews(selected.id).length > 0
-          ? reviewStore.getCourseReviews(selected.id)
-          : selected.comments ?? [])
+    const discussions = discussionStore.getDiscussions(selected.id)
     return {
       ...selected,
-      comments,
+      comments: discussions.length > 0 ? discussions : (selected.comments ?? []),
     }
   }
   return null
@@ -39,26 +32,18 @@ async function loadData() {
   if (Number.isNaN(courseId.value))
     return
   await courseStore.fetchCourseById(courseId.value)
-  if (hasBackendApi())
-    await commentStore.fetchComments(courseId.value)
-  else
-    await reviewStore.fetchReviews(courseId.value)
+  await discussionStore.fetchDiscussions(courseId.value)
 }
 
 async function handleReply(payload: { parentId: number, content: string }) {
   if (Number.isNaN(courseId.value))
     return
-  if (hasBackendApi()) {
-    await commentStore.addReply(courseId.value, payload.parentId, payload.content)
-  }
-  else {
-    reviewStore.addReply(
-      courseId.value,
-      payload.parentId,
-      payload.content,
-      authStore.displayName ?? undefined,
-    )
-  }
+  await discussionStore.addReply(
+    courseId.value,
+    payload.parentId,
+    payload.content,
+    authStore.displayName ?? undefined,
+  )
 }
 
 async function handleSubmitReview(payload: {
@@ -71,9 +56,8 @@ async function handleSubmitReview(payload: {
     teacherStyle: number
   }
 }) {
-  if (!courseStore.selectedCourse) {
+  if (!courseStore.selectedCourse)
     return
-  }
   const selected = courseStore.selectedCourse
   const reviewCount = selected.summary?.reviewCount ?? 0
   const nextCount = reviewCount + 1
@@ -83,7 +67,7 @@ async function handleSubmitReview(payload: {
     easiness: Number(((((selected.ratings?.easiness ?? 0) * reviewCount) + payload.ratings.easiness) / nextCount).toFixed(2)),
     teacherStyle: Number(((((selected.ratings?.teacherStyle ?? 0) * reviewCount) + payload.ratings.teacherStyle) / nextCount).toFixed(2)),
   }
-  await reviewStore.submitReview(courseId.value, {
+  await discussionStore.submitDiscussion(courseId.value, {
     user: authStore.displayName || '匿名同學',
     title: payload.title,
     content: payload.content,

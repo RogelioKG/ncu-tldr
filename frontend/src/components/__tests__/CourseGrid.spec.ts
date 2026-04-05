@@ -1,5 +1,6 @@
 import type { Course } from '@/types'
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { describe, expect, it } from 'vitest'
 import CourseGrid from '../CourseGrid.vue'
 
@@ -24,6 +25,7 @@ describe('courseGrid', () => {
   it('renders all courses', () => {
     const wrapper = mount(CourseGrid, {
       props: { courses: mockCourses },
+      global: { plugins: [createPinia()] },
     })
     expect(wrapper.findAll('.course-card').length).toBe(2)
   })
@@ -31,6 +33,7 @@ describe('courseGrid', () => {
   it('renders empty grid when no courses', () => {
     const wrapper = mount(CourseGrid, {
       props: { courses: [] },
+      global: { plugins: [createPinia()] },
     })
     expect(wrapper.findAll('.course-card').length).toBe(0)
   })
@@ -38,6 +41,7 @@ describe('courseGrid', () => {
   it('emits select-course event when course is selected', async () => {
     const wrapper = mount(CourseGrid, {
       props: { courses: mockCourses },
+      global: { plugins: [createPinia()] },
     })
     const cards = wrapper.findAll('.course-card')
     expect(cards.length).toBeGreaterThan(0)
@@ -51,6 +55,7 @@ describe('courseGrid', () => {
   it('has correct grid layout class', () => {
     const wrapper = mount(CourseGrid, {
       props: { courses: mockCourses },
+      global: { plugins: [createPinia()] },
     })
     expect(wrapper.find('.course-grid').exists()).toBe(true)
   })
