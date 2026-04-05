@@ -2,25 +2,32 @@
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import ErrorToast from '@/components/ErrorToast.vue'
+import { useFormValidation } from '@/composables/useFormValidation'
+import { loginSchema } from '@/schemas'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const email = ref('')
-const password = ref('')
-const errorMsg = ref('')
 const showErrorToast = ref(false)
 
+// 使用 Zod 表單驗證
+const { form, errors, validateAll, touchField, getFieldError } = useFormValidation(
+  loginSchema,
+  {
+    email: '',
+    password: '',
+  },
+)
+
 async function handleSubmit() {
-  errorMsg.value = ''
-  if (!email.value || !password.value) {
-    errorMsg.value = '請填寫所有欄位'
+  // 驗證整個表單
+  if (!validateAll()) {
     return
   }
 
   try {
-    await authStore.loginWithPassword(email.value, password.value)
+    await authStore.loginWithPassword(form.email, form.password)
     router.push('/')
   }
   catch {
@@ -47,13 +54,17 @@ async function handleSubmit() {
           </label>
           <input
             id="login-email"
-            v-model="email"
+            v-model="form.email"
             type="email"
             class="auth-form__input"
+            :class="{ 'auth-form__input--error': getFieldError('email') }"
             placeholder="11xxxxxxx@cc.ncu.edu.tw"
-            required
             autocomplete="email"
+            @blur="touchField('email')"
           >
+          <p v-if="getFieldError('email')" class="auth-form__field-error">
+            {{ getFieldError('email') }}
+          </p>
         </div>
 
         <div class="auth-form__field">
@@ -62,13 +73,17 @@ async function handleSubmit() {
           </label>
           <input
             id="login-password"
-            v-model="password"
+            v-model="form.password"
             type="password"
             class="auth-form__input"
+            :class="{ 'auth-form__input--error': getFieldError('password') }"
             placeholder="請輸入密碼"
-            required
             autocomplete="current-password"
+            @blur="touchField('password')"
           >
+          <p v-if="getFieldError('password')" class="auth-form__field-error">
+            {{ getFieldError('password') }}
+          </p>
         </div>
 
         <div class="auth-form__options">
@@ -77,8 +92,8 @@ async function handleSubmit() {
           </a>
         </div>
 
-        <p v-if="errorMsg" class="auth-form__error">
-          {{ errorMsg }}
+        <p v-if="errors._form" class="auth-form__error">
+          {{ errors._form }}
         </p>
 
         <button
@@ -212,9 +227,19 @@ async function handleSubmit() {
   color: var(--color-text-primary);
 }
 
+.auth-form__input--error {
+  border-color: var(--color-error, #c0392b) !important;
+}
+
+.auth-form__field-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error, #c0392b);
+  margin-top: 4px;
+}
+
 .auth-form__error {
   font-size: var(--font-size-sm);
-  color: #c0392b;
+  color: var(--color-error);
   text-align: center;
   padding: var(--spacing-sm);
   background: rgba(192, 57, 43, 0.06);

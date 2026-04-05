@@ -1,13 +1,25 @@
 <script setup lang="ts">
+import { useFocusTrap } from '@vueuse/integrations'
+import { ref, watch } from 'vue'
 import sorryDolphin from '@/assets/sorry_dophin.png'
 
-defineProps<{
+const props = defineProps<{
   visible: boolean
 }>()
 
 const emit = defineEmits<{
   close: []
 }>()
+
+const dialogRef = ref<HTMLElement | null>(null)
+const { activate, deactivate } = useFocusTrap(dialogRef)
+
+watch(() => props.visible, (visible) => {
+  if (visible)
+    activate()
+  else
+    deactivate()
+})
 
 function handleOverlayClick(event: MouseEvent) {
   if ((event.target as HTMLElement).classList.contains('error-overlay'))
@@ -24,7 +36,7 @@ function handleReport() {
   <Teleport to="body">
     <Transition name="error-fade">
       <div v-if="visible" class="error-overlay" @click="handleOverlayClick">
-        <div class="error-toast" role="alert" aria-label="錯誤訊息">
+        <div ref="dialogRef" class="error-toast" role="alert" aria-label="錯誤訊息">
           <button
             class="error-toast__close"
             type="button"

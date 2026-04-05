@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { useFocusTrap } from '@vueuse/integrations'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useFormValidation } from '@/composables/useFormValidation'
+import { courseReviewSchema } from '@/schemas'
 import StarRatingInput from './StarRatingInput.vue'
 
 const props = defineProps<{
@@ -25,19 +28,24 @@ const emit = defineEmits<{
   ]
 }>()
 
-const form = reactive({
-  semester: '',
-  reward: 0,
-  score: 0,
-  easiness: 0,
-  teacherStyle: 0,
-  weeklyHours: 5,
-  textbook: '',
-  comment: '',
-})
+// 使用 Zod 表單驗證
+const { form, errors, isValid, validateAll } = useFormValidation(
+  courseReviewSchema,
+  {
+    semester: '',
+    reward: 0,
+    score: 0,
+    easiness: 0,
+    teacherStyle: 0,
+    weeklyHours: 5,
+    textbook: '',
+    comment: '',
+  },
+)
 
 const weeklyHoursTouched = ref(false)
 const submitted = ref(false)
+
 const semesterOptions = computed(() => {
   const startAcademicYear = 108
   const currentRocYear = new Date().getFullYear() - 1911
@@ -54,20 +62,11 @@ const hasAnyStars = computed(() =>
   form.reward > 0 || form.score > 0 || form.easiness > 0 || form.teacherStyle > 0,
 )
 
-const hasAnyOptionalInput = computed(() =>
-  hasAnyStars.value
-  || weeklyHoursTouched.value
-  || form.textbook.trim().length > 0
-  || form.comment.trim().length > 0,
-)
-
-const canSubmit = computed(() => form.semester !== '' && hasAnyOptionalInput.value)
-
 const submitButtonText = computed(() => {
   if (form.semester === '')
     return '請先選擇修課年份'
-  if (!hasAnyOptionalInput.value)
-    return '請至少再填寫一項'
+  if (errors._form)
+    return errors._form
   return '送出評價'
 })
 
@@ -86,15 +85,18 @@ function handleSliderInput() {
 }
 
 function handleSubmit() {
-  if (!canSubmit.value) {
+  // 驗證表單
+  if (!validateAll()) {
     return
   }
-  const normalizedComment = form.comment.trim()
+
+  const normalizedComment = form.comment?.trim() || ''
   const generatedContent = normalizedComment || [
     `修課學期：${form.semester}`,
     `每週投入：約 ${weeklyHoursLabel.value}`,
-    `教材：${form.textbook.trim() || '未填寫'}`,
+    `教材：${form.textbook?.trim() || '未填寫'}`,
   ].join('；')
+
   emit('submit', {
     title: `[${form.semester}] ${props.courseName}`,
     content: generatedContent,
@@ -105,11 +107,17 @@ function handleSubmit() {
       teacherStyle: form.teacherStyle,
     },
     weeklyHours: weeklyHoursLabel.value,
-    textbook: form.textbook.trim(),
+    textbook: form.textbook?.trim() || '',
     semester: form.semester,
   })
   submitted.value = true
 }
+
+const dialogRef = ref<HTMLElement | null>(null)
+const { activate, deactivate } = useFocusTrap(dialogRef)
+
+onMounted(() => activate())
+onUnmounted(() => deactivate())
 
 function handleOverlayClick(e: MouseEvent) {
   if ((e.target as HTMLElement).classList.contains('review-overlay')) {
@@ -122,11 +130,11 @@ function handleOverlayClick(e: MouseEvent) {
   <Teleport to="body">
     <Transition name="review-fade">
       <div
-        v-show="true"
+        v-if="true"
         class="review-overlay"
         @click="handleOverlayClick"
       >
-        <div class="review-toast" role="dialog" :aria-label="`撰寫 ${courseName} 評價`">
+        <div ref="dialogRef" class="review-toast" role="dialog" :aria-label="`撰寫 ${courseName} 評價`">
           <!-- Header (fixed outside scroll area) -->
           <div class="review-toast__header">
             <h3 class="review-toast__title">
@@ -245,8 +253,8 @@ function handleOverlayClick(e: MouseEvent) {
                 <button
                   type="submit"
                   class="review-toast__submit"
-                  :class="{ 'review-toast__submit--disabled': !canSubmit }"
-                  :disabled="!canSubmit"
+                  :class="{ 'review-toast__submit--disabled': !isValid }"
+                  :disabled="!isValid"
                 >
                   {{ submitButtonText }}
                 </button>

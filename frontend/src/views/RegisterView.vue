@@ -2,55 +2,36 @@
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import ErrorToast from '@/components/ErrorToast.vue'
+import { useFormValidation } from '@/composables/useFormValidation'
+import { registerSchema } from '@/schemas'
 import { useAuthStore } from '@/stores/useAuthStore'
-
-const studentIdRegex = /^\d{9}@cc\.ncu\.edu\.tw$/
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const email = ref('')
-const password = ref('')
-const confirmPassword = ref('')
-const errorMsg = ref('')
 const showErrorToast = ref(false)
 
+// 使用 Zod 表單驗證
+const { form, errors, validateAll, touchField, getFieldError } = useFormValidation(
+  registerSchema,
+  {
+    email: '',
+    password: '',
+    confirmPassword: '',
+  },
+)
+
 async function handleSubmit() {
-  errorMsg.value = ''
-
-  if (!email.value || !password.value || !confirmPassword.value) {
-    errorMsg.value = '請填寫所有欄位'
-    return
-  }
-
-  // Validate student email format (9 digits student ID)
-  if (!studentIdRegex.test(email.value)) {
-    errorMsg.value = '請使用正確的學校信箱（9 碼學號 @cc.ncu.edu.tw）'
-    return
-  }
-
-  if (password.value !== confirmPassword.value) {
-    errorMsg.value = '密碼與確認密碼不一致'
-    return
-  }
-
-  // Password complexity: at least one special char, one uppercase, one lowercase, one number
-  if (!passwordRegex.test(password.value)) {
-    errorMsg.value = '密碼需包含至少一個特殊符號、一個大寫字母、一個小寫字母及一個數字'
-    return
-  }
-
-  if (password.value.length < 8) {
-    errorMsg.value = '密碼長度至少需要 8 個字元'
+  // 驗證整個表單
+  if (!validateAll()) {
     return
   }
 
   try {
-    const studentId = email.value.split('@')[0] ?? ''
+    const studentId = form.email.split('@')[0] ?? ''
     await authStore.registerWithPassword(
-      email.value,
-      password.value,
+      form.email,
+      form.password,
       studentId,
     )
     router.push('/login')
@@ -79,13 +60,17 @@ async function handleSubmit() {
           </label>
           <input
             id="reg-email"
-            v-model="email"
+            v-model="form.email"
             type="email"
             class="auth-form__input"
+            :class="{ 'auth-form__input--error': getFieldError('email') }"
             placeholder="11xxxxxxx@cc.ncu.edu.tw"
-            required
             autocomplete="email"
+            @blur="touchField('email')"
           >
+          <p v-if="getFieldError('email')" class="auth-form__field-error">
+            {{ getFieldError('email') }}
+          </p>
         </div>
 
         <div class="auth-form__field">
@@ -94,13 +79,17 @@ async function handleSubmit() {
           </label>
           <input
             id="reg-password"
-            v-model="password"
+            v-model="form.password"
             type="password"
             class="auth-form__input"
+            :class="{ 'auth-form__input--error': getFieldError('password') }"
             placeholder="至少 8 個字元"
-            required
             autocomplete="new-password"
+            @blur="touchField('password')"
           >
+          <p v-if="getFieldError('password')" class="auth-form__field-error">
+            {{ getFieldError('password') }}
+          </p>
         </div>
 
         <div class="auth-form__field">
@@ -109,17 +98,21 @@ async function handleSubmit() {
           </label>
           <input
             id="reg-confirm"
-            v-model="confirmPassword"
+            v-model="form.confirmPassword"
             type="password"
             class="auth-form__input"
+            :class="{ 'auth-form__input--error': getFieldError('confirmPassword') }"
             placeholder="再次輸入密碼"
-            required
             autocomplete="new-password"
+            @blur="touchField('confirmPassword')"
           >
+          <p v-if="getFieldError('confirmPassword')" class="auth-form__field-error">
+            {{ getFieldError('confirmPassword') }}
+          </p>
         </div>
 
-        <p v-if="errorMsg" class="auth-form__error">
-          {{ errorMsg }}
+        <p v-if="errors._form" class="auth-form__error">
+          {{ errors._form }}
         </p>
 
         <button
@@ -248,9 +241,19 @@ async function handleSubmit() {
   box-shadow: 0 0 0 3px rgba(127, 169, 184, 0.15);
 }
 
+.auth-form__input--error {
+  border-color: var(--color-error, #c0392b) !important;
+}
+
+.auth-form__field-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error, #c0392b);
+  margin-top: 4px;
+}
+
 .auth-form__error {
   font-size: var(--font-size-sm);
-  color: #c0392b;
+  color: var(--color-error);
   text-align: center;
   padding: var(--spacing-sm);
   background: rgba(192, 57, 43, 0.06);

@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { useFocusTrap } from '@vueuse/integrations'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import wishingAnimation from '@/assets/wishing_animation_3s.mp4'
 import ErrorToast from '@/components/ErrorToast.vue'
+import { useFormValidation } from '@/composables/useFormValidation'
+import { wishFormSchema } from '@/schemas'
 import { useCoursePairsStore } from '@/stores/useCoursePairsStore'
 import { useWishStore } from '@/stores/useWishStore'
 
@@ -20,18 +23,26 @@ const emit = defineEmits<{
 const pairsStore = useCoursePairsStore()
 const wishStore = useWishStore()
 
-const form = reactive<WishFormPayload>({
-  name: '',
-  teacher: '',
-})
+// 使用 Zod 表單驗證
+const { form, errors, validateAll, touchField, getFieldError } = useFormValidation(
+  wishFormSchema,
+  {
+    name: '',
+    teacher: '',
+  },
+)
 
 const submissionState = ref<SubmissionState>('idle')
 const showErrorToast = ref(false)
-const videoRef = ref<HTMLVideoElement | null>(null)
+const dialogRef = ref<HTMLElement | null>(null)
+const { activate, deactivate } = useFocusTrap(dialogRef)
 
 onMounted(async () => {
   await pairsStore.fetchPairs()
+  activate()
 })
+
+onUnmounted(() => deactivate())
 
 const filteredCourseNames = computed(() => {
   const teacher = form.teacher.trim()
@@ -61,6 +72,7 @@ const filteredTeachers = computed(() => {
     .slice(0, 12)
 })
 
+// 額外的業務邏輯驗證：課程與教師組合必須有效
 const canSubmit = computed(() => {
   const name = form.name.trim()
   const teacher = form.teacher.trim()
@@ -74,6 +86,11 @@ function handleOverlayClick(event: MouseEvent) {
 }
 
 async function handleSubmit() {
+  // 先驗證基本格式
+  if (!validateAll())
+    return
+
+  // 再驗證業務邏輯
   if (!canSubmit.value)
     return
 
@@ -98,8 +115,8 @@ async function handleSubmit() {
   <ErrorToast :visible="showErrorToast" @close="showErrorToast = false" />
   <Teleport to="body">
     <Transition name="wish-fade">
-      <div v-show="true" class="wish-overlay" @click="handleOverlayClick">
-        <div class="wish-toast" role="dialog" aria-label="課程許願池表單">
+      <div v-if="true" class="wish-overlay" @click="handleOverlayClick">
+        <div ref="dialogRef" class="wish-toast" role="dialog" aria-label="課程許願池表單">
           <div v-if="submissionState !== 'success'" class="wish-toast__header">
             <h3 class="wish-toast__title">
               課程許願池
@@ -129,7 +146,6 @@ async function handleSubmit() {
                   課程女神眷顧我
                 </h3>
                 <video
-                  ref="videoRef"
                   class="wish-toast__video"
                   :src="wishingAnimation"
                   autoplay
@@ -155,8 +171,13 @@ async function handleSubmit() {
                   type="text"
                   list="wish-course-name-options"
                   class="wish-toast__input"
+                  :class="{ 'wish-toast__input--error': getFieldError('name') }"
                   placeholder="請輸入課程名稱"
+                  @blur="touchField('name')"
                 >
+                <p v-if="getFieldError('name')" class="wish-toast__field-error">
+                  {{ getFieldError('name') }}
+                </p>
                 <datalist id="wish-course-name-options">
                   <option
                     v-for="courseName in filteredCourseNames"
@@ -174,8 +195,13 @@ async function handleSubmit() {
                   type="text"
                   list="wish-course-teacher-options"
                   class="wish-toast__input"
+                  :class="{ 'wish-toast__input--error': getFieldError('teacher') }"
                   placeholder="請輸入教師姓名"
+                  @blur="touchField('teacher')"
                 >
+                <p v-if="getFieldError('teacher')" class="wish-toast__field-error">
+                  {{ getFieldError('teacher') }}
+                </p>
                 <datalist id="wish-course-teacher-options">
                   <option
                     v-for="teacher in filteredTeachers"
@@ -183,6 +209,10 @@ async function handleSubmit() {
                     :value="teacher"
                   />
                 </datalist>
+
+                <p v-if="errors._form" class="wish-toast__field-error">
+                  {{ errors._form }}
+                </p>
 
                 <p v-if="form.name.trim() && form.teacher.trim() && !canSubmit" class="wish-toast__hint">
                   此課程與教師的組合不存在
@@ -293,9 +323,20 @@ async function handleSubmit() {
   box-shadow: 0 0 0 2px var(--color-accent-primary);
 }
 
+.wish-toast__input--error {
+  border-color: var(--color-error, #c0392b);
+  box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.12);
+}
+
+.wish-toast__field-error {
+  margin: calc(var(--spacing-xs) * -1) 0 var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-error, #c0392b);
+}
+
 .wish-toast__hint {
   font-size: var(--font-size-xs);
-  color: var(--color-danger, #e53e3e);
+  color: var(--color-error, #e53e3e);
   margin: 0;
 }
 
