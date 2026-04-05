@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Course, SortCriterion, WishCourse } from '@/types'
+import { useDebounceFn } from '@vueuse/core'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import CourseFilterSort from '@/components/CourseFilterSort.vue'
@@ -62,15 +63,12 @@ function handleSelectCourse(course: Course) {
   router.push({ name: 'course-detail', params: { id: course.id } })
 }
 
-function handleSearch(query: string) {
+const handleSearch = useDebounceFn((query: string) => {
   courseStore.setSearchQuery(query)
-}
+}, 300)
 
 function handleWishCourseSelect(course: WishCourse) {
-  const found = courseStore.courses.find(c => c.name === course.name)
-  if (found) {
-    handleSelectCourse(found)
-  }
+  router.push({ name: 'course-detail', params: { id: course.id } })
 }
 </script>
 

@@ -36,6 +36,13 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     headers,
   })
   if (!response.ok) {
+    if (response.status === 401) {
+      const { useAuthStore } = await import('@/stores/useAuthStore')
+      useAuthStore().logout()
+      const { default: router } = await import('@/router')
+      router.push({ name: 'login' })
+      throw new ApiError('Session expired', 401)
+    }
     let message = `Request failed with status ${response.status}`
     try {
       const data = await response.json() as { detail?: string }

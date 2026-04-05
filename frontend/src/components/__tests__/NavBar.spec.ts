@@ -1,18 +1,25 @@
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import NavBar from '../NavBar.vue'
+
+vi.mock('@/api/client', () => ({
+  getDataSourceLabel: vi.fn(() => 'Mock'),
+}))
+
+vi.mock('vue-router', () => ({
+  RouterLink: {
+    name: 'RouterLink',
+    template: '<a><slot /></a>',
+  },
+  useRoute: () => ({ name: 'home' }),
+}))
 
 describe('navBar', () => {
   function mountNavBar() {
     return mount(NavBar, {
       global: {
         plugins: [createPinia()],
-        stubs: {
-          RouterLink: {
-            template: '<a><slot /></a>',
-          },
-        },
       },
     })
   }
@@ -39,7 +46,6 @@ describe('navBar', () => {
   it('applies scrolled class when scrolled', async () => {
     const wrapper = mountNavBar()
 
-    // Simulate scroll
     Object.defineProperty(window, 'scrollY', { value: 50, writable: true })
     window.dispatchEvent(new Event('scroll'))
 

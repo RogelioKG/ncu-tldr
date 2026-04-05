@@ -1,9 +1,15 @@
 import type { Course } from '@/types'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import { describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import HomeView from '../HomeView.vue'
+
+vi.mock('@/api/wishlist', () => ({
+  getWishlist: vi.fn().mockResolvedValue([]),
+  addWish: vi.fn(),
+  removeWish: vi.fn(),
+}))
 
 const mockCourses: Course[] = [
   {
@@ -89,6 +95,7 @@ describe('homeView', () => {
       name: '演算法',
       teacher: '王大明',
     })
+    await flushPromises()
 
     expect(pushSpy).toHaveBeenCalledWith({
       name: 'course-detail',

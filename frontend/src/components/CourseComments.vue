@@ -102,10 +102,10 @@ function submitReply() {
             {{ node.root.content }}
           </p>
           <div class="comments__actions">
-            <button type="button" class="comments__vote-btn" aria-label="按讚">
+            <button type="button" class="comments__vote-btn" aria-label="按讚" disabled title="即將推出">
               👍 <span v-if="node.root.likes">{{ node.root.likes }}</span>
             </button>
-            <button type="button" class="comments__vote-btn" aria-label="倒讚">
+            <button type="button" class="comments__vote-btn" aria-label="倒讚" disabled title="即將推出">
               👎 <span v-if="node.root.dislikes">{{ node.root.dislikes }}</span>
             </button>
             <button

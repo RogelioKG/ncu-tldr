@@ -11,8 +11,6 @@ const emit = defineEmits<{
   select: [course: Course]
 }>()
 
-const COURSE_NAME_MAX_LENGTH = 7
-
 interface Props {
   course: Course
 }
@@ -26,13 +24,6 @@ function handleToggleSave(e: Event) {
   e.stopPropagation()
   toggleSave(props.course.id)
 }
-
-const displayCourseName = computed(() => {
-  const name = props.course.name
-  return name.length > COURSE_NAME_MAX_LENGTH
-    ? `${name.slice(0, COURSE_NAME_MAX_LENGTH)}...`
-    : name
-})
 
 function handleClick() {
   emit('select', props.course)
@@ -61,7 +52,7 @@ function handleClick() {
       </div>
       <header class="course-card__header">
         <h2 class="course-card__title">
-          {{ displayCourseName }}
+          {{ course.name }}
         </h2>
         <div class="course-card__divider" />
         <p class="course-card__teacher">

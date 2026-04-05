@@ -46,6 +46,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  document.body.style.overflow = ''
 })
 
 function handleLogout() {
