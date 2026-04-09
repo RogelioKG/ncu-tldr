@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useFocusTrap } from '@vueuse/integrations'
+import { useFocusTrap } from '@vueuse/integrations/useFocusTrap'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useFormValidation } from '@/composables/useFormValidation'
 import { courseReviewSchema } from '@/schemas'

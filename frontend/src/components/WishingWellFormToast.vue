@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useFocusTrap } from '@vueuse/integrations'
+import { useFocusTrap } from '@vueuse/integrations/useFocusTrap'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import wishingAnimation from '@/assets/wishing_animation_3s.mp4'
 import ErrorToast from '@/components/ErrorToast.vue'
