@@ -1,6 +1,5 @@
 import type { Course } from '@/types'
-import { mockCourses } from '@/mock/courses'
-import { ApiError, hasBackendApi, request } from './client'
+import { ApiError, request } from './client'
 
 /** Raw shape returned by the backend API */
 interface RawCourseTime {
@@ -57,41 +56,26 @@ function normalizeApiCourse(raw: RawCourse): Course {
 }
 
 export async function getCourses(params?: { q?: string, sort?: string }): Promise<Course[]> {
-  if (hasBackendApi()) {
-    const query = new URLSearchParams()
-    if (params?.q) {
-      query.set('q', params.q)
-    }
-    if (params?.sort) {
-      query.set('sort', params.sort)
-    }
-    const suffix = query.toString() ? `?${query.toString()}` : ''
-    const raw = await request<RawCourse[]>(`/api/courses${suffix}`)
-    return raw.map(normalizeApiCourse)
+  const query = new URLSearchParams()
+  if (params?.q) {
+    query.set('q', params.q)
   }
-
-  const keyword = params?.q?.trim().toLowerCase() ?? ''
-  if (!keyword) {
-    return [...mockCourses]
+  if (params?.sort) {
+    query.set('sort', params.sort)
   }
-  return mockCourses.filter(course =>
-    course.name.toLowerCase().includes(keyword)
-    || course.teacher.toLowerCase().includes(keyword)
-    || course.tags.some(tag => tag.toLowerCase().includes(keyword)),
-  )
+  const suffix = query.toString() ? `?${query.toString()}` : ''
+  const raw = await request<RawCourse[]>(`/api/courses${suffix}`)
+  return raw.map(normalizeApiCourse)
 }
 
 export async function getCourseById(courseId: number): Promise<Course | null> {
-  if (hasBackendApi()) {
-    try {
-      const raw = await request<RawCourse>(`/api/courses/${courseId}`)
-      return normalizeApiCourse(raw)
-    }
-    catch (err) {
-      if (err instanceof ApiError && err.status === 404)
-        return null
-      throw err
-    }
+  try {
+    const raw = await request<RawCourse>(`/api/courses/${courseId}`)
+    return normalizeApiCourse(raw)
   }
-  return mockCourses.find(course => course.id === courseId) ?? null
+  catch (err) {
+    if (err instanceof ApiError && err.status === 404)
+      return null
+    throw err
+  }
 }

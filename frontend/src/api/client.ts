@@ -19,12 +19,16 @@ export function hasBackendApi(): boolean {
   return API_BASE_URL.length > 0
 }
 
-/** 開發用：目前資料來源為 Mock 或 API（DB），便於辨識。 */
-export function getDataSourceLabel(): 'Mock' | 'API' {
-  return hasBackendApi() ? 'API' : 'Mock'
+/** 正式流程固定由後端 API（DB/ORM）提供資料。 */
+export function getDataSourceLabel(): 'API' {
+  return 'API'
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  if (!hasBackendApi()) {
+    throw new ApiError('Backend API is not configured. Please set VITE_API_BASE_URL.', 500)
+  }
+
   const headers = new Headers(options.headers)
   headers.set('Content-Type', 'application/json')
   if (options.token) {

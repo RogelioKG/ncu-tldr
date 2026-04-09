@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { hasBackendApi, request } from '@/api/client'
-import { mockCourses } from '@/mock/courses'
+import { request } from '@/api/client'
 
 interface CoursePair {
   courseName: string
@@ -22,13 +21,8 @@ export const useCoursePairsStore = defineStore('coursePairs', () => {
       return
     isLoading.value = true
     try {
-      if (hasBackendApi()) {
-        const data = await request<CoursePairsResponse>('/api/courses/pairs')
-        pairs.value = data.pairs
-      }
-      else {
-        pairs.value = mockCourses.map(c => ({ courseName: c.name, teacher: c.teacher }))
-      }
+      const data = await request<CoursePairsResponse>('/api/courses/pairs')
+      pairs.value = data.pairs
       fetched.value = true
     }
     finally {
