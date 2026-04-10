@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.course import Course
 from app.repositories.course_repo import course_repo
-from app.schemas.course import CoursePairOut, CoursePairsResponse, CourseOut, RatingsOut
+from app.schemas.course import CoursePairOut, CoursePairsResponse, CourseOut, RatingsOut, SummaryOut
 
 _DAY_MAP = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六", 7: "日"}
 
@@ -58,6 +58,20 @@ def _to_course_out(
     include_summary: bool = False,
 ) -> CourseOut:
     course, avg_gain, avg_high_score, avg_easiness, avg_teacher_style, review_count = row
+
+    summary = None
+    if include_summary:
+        summary = SummaryOut(
+            overview="",
+            target_audience="",
+            textbook="",
+            prerequisites="",
+            weekly_hours="",
+            grading_items=[],
+            notes="",
+            review_count=int(review_count or 0),
+        )
+
     return CourseOut(
         id=course.id,
         name=course.title,
@@ -75,7 +89,7 @@ def _to_course_out(
         time=_format_time(course.course_times),
         credits=course.credit,
         type=course.course_type,
-        summary=None,
+        summary=summary,
     )
 
 
