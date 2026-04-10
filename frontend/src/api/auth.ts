@@ -23,19 +23,19 @@ export interface RegisterPayload extends LoginPayload {
 }
 
 export async function login(payload: LoginPayload): Promise<AuthResult> {
-  return await request<AuthResult>('/api/auth/login', {
+  return await request<AuthResult>('/api/v1/auth/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
 export async function register(payload: RegisterPayload): Promise<AuthResult> {
-  return await request<AuthResult>('/api/auth/register', {
+  return await request<AuthResult>('/api/v1/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
 }
 
 export async function getMe(token: string): Promise<AuthUser> {
-  return await request<AuthUser>('/api/auth/me', { token })
+  return await request<AuthUser>('/api/v1/auth/me', { token })
 }
