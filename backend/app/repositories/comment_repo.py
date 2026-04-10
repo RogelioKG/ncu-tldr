@@ -1,5 +1,4 @@
 import uuid
-from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,8 +23,8 @@ class CommentRepository:
         *,
         course_id: int,
         user_id: uuid.UUID,
-        parent_id: Optional[int],
-        title: Optional[str],
+        parent_id: int | None,
+        title: str | None,
         content: str,
     ) -> Comment:
         comment = Comment(

@@ -33,6 +33,8 @@ class CourseRepository:
         sort_field: str | None = None,
         sort_dir: str = "desc",
     ) -> list[tuple]:
+        if sort_dir not in ("asc", "desc"):
+            sort_dir = "desc"
         ratings_sq = self._ratings_subquery()
 
         stmt = (

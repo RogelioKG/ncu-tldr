@@ -1,6 +1,7 @@
 import uuid
 
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.wishlist import WishlistItem
@@ -21,34 +22,29 @@ class WishlistRepository:
         teacher_name: str,
         user_id: uuid.UUID,
     ) -> WishlistItem:
-        result = await db.execute(
-            select(WishlistItem)
-            .where(WishlistItem.course_name == course_name)
-            .where(WishlistItem.teacher_name == teacher_name)
+        stmt = (
+            pg_insert(WishlistItem)
+            .values(
+                course_name=course_name,
+                teacher_name=teacher_name,
+                created_by=user_id,
+                vote_count=1,
+            )
+            .on_conflict_do_update(
+                constraint="uq_wishlist_course_teacher",
+                set_={"vote_count": WishlistItem.__table__.c.vote_count + 1},
+            )
+            .returning(WishlistItem)
         )
-        existing = result.scalars().first()
-        if existing:
-            existing.vote_count += 1
-            await db.flush()
-            await db.refresh(existing)
-            return existing
-
-        item = WishlistItem(
-            course_name=course_name,
-            teacher_name=teacher_name,
-            created_by=user_id,
-            vote_count=1,
-        )
-        db.add(item)
-        await db.flush()
-        await db.refresh(item)
-        return item
+        result = await db.execute(stmt)
+        return result.scalars().one()
 
     async def delete(self, db: AsyncSession, wish_id: int) -> bool:
         item = await db.get(WishlistItem, wish_id)
         if item is None:
             return False
         await db.delete(item)
+        await db.flush()
         return True
 
 
