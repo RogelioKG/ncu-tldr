@@ -72,12 +72,12 @@ function handleClick() {
 
       <div v-if="props.course.ratings" class="course-card__ratings">
         <StarRating
-          :rating="props.course.ratings.reward"
+          :rating="props.course.ratings.gain"
           label="收穫"
           size="sm"
         />
         <StarRating
-          :rating="props.course.ratings.score"
+          :rating="props.course.ratings.highScore"
           label="分數"
           size="sm"
         />

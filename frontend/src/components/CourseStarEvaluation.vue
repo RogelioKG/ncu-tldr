@@ -12,8 +12,8 @@ function clampRating(value: number): number {
 }
 
 const overallRating = computed(() => {
-  const { reward, score, easiness, teacherStyle } = props.ratings
-  const weighted = reward * 0.35 + score * 0.2 + easiness * 0.15 + teacherStyle * 0.3
+  const { gain, highScore, easiness, teacherStyle } = props.ratings
+  const weighted = gain * 0.35 + highScore * 0.2 + easiness * 0.15 + teacherStyle * 0.3
   return Number(clampRating(weighted).toFixed(1))
 })
 </script>
@@ -38,12 +38,12 @@ const overallRating = computed(() => {
 
     <div class="rating-card__metrics" aria-label="評分細項">
       <StarRating
-        :rating="ratings.reward"
+        :rating="ratings.gain"
         label="收穫"
         size="sm"
       />
       <StarRating
-        :rating="ratings.score"
+        :rating="ratings.highScore"
         label="分數"
         size="sm"
       />

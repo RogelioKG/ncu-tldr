@@ -15,7 +15,7 @@ vi.mock('@/api/courses', () => ({
         name: '演算法',
         teacher: '王大明',
         tags: ['必修'],
-        ratings: { reward: 4.5, score: 4, easiness: 3, teacherStyle: 4.5 },
+        ratings: { gain: 4.5, highScore: 4, easiness: 3, teacherStyle: 4.5 },
       })
     }
     if (id === 2) {

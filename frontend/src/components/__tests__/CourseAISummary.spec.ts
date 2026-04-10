@@ -124,7 +124,7 @@ describe('courseAISummary', () => {
     form.vm.$emit('submit', {
       title: '[114-1] 資料結構',
       content: '內容',
-      ratings: { reward: 5, score: 4, easiness: 3, teacherStyle: 4 },
+      ratings: { gain: 5, highScore: 4, easiness: 3, teacherStyle: 4 },
       weeklyHours: '5h',
       textbook: '講義',
       semester: '114-1',

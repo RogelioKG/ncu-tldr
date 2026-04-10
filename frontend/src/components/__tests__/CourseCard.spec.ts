@@ -10,8 +10,8 @@ const mockCourse: Course = {
   teacher: '王小明',
   tags: ['必修', '程式設計'],
   ratings: {
-    reward: 4.5,
-    score: 4.0,
+    gain: 4.5,
+    highScore: 4.0,
     easiness: 3.5,
     teacherStyle: 4.2,
   },

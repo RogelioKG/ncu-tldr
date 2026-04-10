@@ -16,8 +16,8 @@ const emit = defineEmits<{
       title: string
       content: string
       ratings: {
-        reward: number
-        score: number
+        gain: number
+        highScore: number
         easiness: number
         teacherStyle: number
       }
@@ -33,8 +33,8 @@ const { form, errors, isValid, validateAll } = useFormValidation(
   courseReviewSchema,
   {
     semester: '',
-    reward: 0,
-    score: 0,
+    gain: 0,
+    highScore: 0,
     easiness: 0,
     teacherStyle: 0,
     weeklyHours: 5,
@@ -59,7 +59,7 @@ const semesterOptions = computed(() => {
 })
 
 const hasAnyStars = computed(() =>
-  form.reward > 0 || form.score > 0 || form.easiness > 0 || form.teacherStyle > 0,
+  form.gain > 0 || form.highScore > 0 || form.easiness > 0 || form.teacherStyle > 0,
 )
 
 const submitButtonText = computed(() => {
@@ -101,8 +101,8 @@ function handleSubmit() {
     title: `[${form.semester}] ${props.courseName}`,
     content: generatedContent,
     ratings: {
-      reward: form.reward,
-      score: form.score,
+      gain: form.gain,
+      highScore: form.highScore,
       easiness: form.easiness,
       teacherStyle: form.teacherStyle,
     },
@@ -190,8 +190,8 @@ function handleOverlayClick(e: MouseEvent) {
                     <span v-if="hasAnyStars" class="review-toast__check">✓</span>
                   </legend>
                   <div class="review-toast__stars-group">
-                    <StarRatingInput v-model="form.reward" label="收穫" />
-                    <StarRatingInput v-model="form.score" label="分數" />
+                    <StarRatingInput v-model="form.gain" label="收穫" />
+                    <StarRatingInput v-model="form.highScore" label="分數" />
                     <StarRatingInput v-model="form.easiness" label="輕鬆" />
                     <StarRatingInput v-model="form.teacherStyle" label="教師風格" />
                   </div>

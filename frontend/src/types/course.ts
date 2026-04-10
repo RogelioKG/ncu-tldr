@@ -15,9 +15,9 @@ export type {
 
 export interface CourseRatings {
   /** 收穫評分 (0-5) */
-  reward: number
+  gain: number
   /** 分數評分 (0-5) */
-  score: number
+  highScore: number
   /** 輕鬆程度評分 (0-5) */
   easiness: number
   /** 教師風格評分 (0-5) */

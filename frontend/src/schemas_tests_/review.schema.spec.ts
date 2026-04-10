@@ -5,8 +5,8 @@ describe('course review schema', () => {
   it('accepts payload with semester and at least one star', () => {
     const result = courseReviewSchema.safeParse({
       semester: '114-1',
-      reward: 4,
-      score: 0,
+      gain: 4,
+      highScore: 0,
       easiness: 0,
       teacherStyle: 0,
       weeklyHours: 5,
@@ -20,8 +20,8 @@ describe('course review schema', () => {
   it('accepts payload with textbook only (no stars)', () => {
     const result = courseReviewSchema.safeParse({
       semester: '114-1',
-      reward: 0,
-      score: 0,
+      gain: 0,
+      highScore: 0,
       easiness: 0,
       teacherStyle: 0,
       weeklyHours: 5,
@@ -35,8 +35,8 @@ describe('course review schema', () => {
   it('rejects missing semester', () => {
     const result = courseReviewSchema.safeParse({
       semester: '',
-      reward: 4,
-      score: 0,
+      gain: 4,
+      highScore: 0,
       easiness: 0,
       teacherStyle: 0,
       weeklyHours: 5,
@@ -58,8 +58,8 @@ describe('course review schema', () => {
   it('rejects payload with no stars and no text', () => {
     const result = courseReviewSchema.safeParse({
       semester: '114-1',
-      reward: 0,
-      score: 0,
+      gain: 0,
+      highScore: 0,
       easiness: 0,
       teacherStyle: 0,
       weeklyHours: 5,
@@ -81,8 +81,8 @@ describe('course review schema', () => {
   it('rejects weeklyHours out of range', () => {
     const result = courseReviewSchema.safeParse({
       semester: '114-1',
-      reward: 4,
-      score: 0,
+      gain: 4,
+      highScore: 0,
       easiness: 0,
       teacherStyle: 0,
       weeklyHours: 25,

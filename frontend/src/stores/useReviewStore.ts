@@ -34,8 +34,8 @@ export const useReviewStore = defineStore('review', () => {
       title: string
       content: string
       ratings: {
-        reward: number
-        score: number
+        gain: number
+        highScore: number
         easiness: number
         teacherStyle: number
       }

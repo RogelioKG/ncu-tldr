@@ -13,7 +13,7 @@ const mockCourse: Course = {
   name: '資料結構',
   teacher: '王小明',
   tags: ['必修', '程式設計', '資工系'],
-  ratings: { reward: 4.5, score: 4.0, easiness: 3.5, teacherStyle: 4.2 },
+  ratings: { gain: 4.5, highScore: 4.0, easiness: 3.5, teacherStyle: 4.2 },
   department: '資訊工程學系',
   code: 'CS101',
   time: '週一 3-4',
@@ -114,7 +114,7 @@ describe('courseDetail', () => {
     aiSummary.vm.$emit('submitReview', {
       title: 't',
       content: 'c',
-      ratings: { reward: 5, score: 4, easiness: 3, teacherStyle: 4 },
+      ratings: { gain: 5, highScore: 4, easiness: 3, teacherStyle: 4 },
       weeklyHours: '5h',
       textbook: 'x',
       semester: '114-1',

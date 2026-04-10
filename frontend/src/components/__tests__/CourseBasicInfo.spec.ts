@@ -8,7 +8,7 @@ const mockCourse: Course = {
   name: '資料結構',
   teacher: '王小明',
   tags: ['必修'],
-  ratings: { reward: 4.5, score: 4.0, easiness: 3.5, teacherStyle: 4.2 },
+  ratings: { gain: 4.5, highScore: 4.0, easiness: 3.5, teacherStyle: 4.2 },
   department: '資訊工程學系',
   code: 'CS101',
   time: '週一 3-4',
@@ -72,7 +72,7 @@ describe('courseBasicInfo', () => {
       name: '資料結構',
       teacher: '王小明',
       tags: ['必修'],
-      ratings: { reward: 4.5, score: 4.0, easiness: 3.5, teacherStyle: 4.2 },
+      ratings: { gain: 4.5, highScore: 4.0, easiness: 3.5, teacherStyle: 4.2 },
     }
     const wrapper = mount(CourseBasicInfo, {
       props: { course: courseWithoutOptional },

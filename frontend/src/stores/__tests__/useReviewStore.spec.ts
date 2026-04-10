@@ -50,13 +50,13 @@ describe('useReviewStore', () => {
       title: '心得',
       content: '內容',
       ratings: {
-        reward: 5,
-        score: 4,
+        gain: 5,
+        highScore: 4,
         easiness: 3,
         teacherStyle: 4,
       },
     })
-    expect(saved.ratings?.reward).toBe(5)
+    expect(saved.ratings?.gain).toBe(5)
     expect(store.getCourseReviews(1)).toHaveLength(1)
   })
 })

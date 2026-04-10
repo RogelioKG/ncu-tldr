@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import CourseStarEvaluation from '../CourseStarEvaluation.vue'
 
 const mockRatings: CourseRatings = {
-  reward: 4.5,
-  score: 4.0,
+  gain: 4.5,
+  highScore: 4.0,
   easiness: 3.5,
   teacherStyle: 4.2,
 }
@@ -38,8 +38,8 @@ describe('courseStarEvaluation', () => {
 
   it('clamps ratings above 5', () => {
     const highRatings: CourseRatings = {
-      reward: 6.0,
-      score: 5.5,
+      gain: 6.0,
+      highScore: 5.5,
       easiness: 7.0,
       teacherStyle: 5.2,
     }
@@ -53,8 +53,8 @@ describe('courseStarEvaluation', () => {
 
   it('clamps ratings below 0', () => {
     const lowRatings: CourseRatings = {
-      reward: -1.0,
-      score: -0.5,
+      gain: -1.0,
+      highScore: -0.5,
       easiness: -2.0,
       teacherStyle: -0.2,
     }

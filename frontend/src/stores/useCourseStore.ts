@@ -3,12 +3,18 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { getCourseById, getCourses } from '@/api/courses'
 
+// Sort param mapping: backend SORT_MAP uses reward/score as keys even though it returns gain/highScore
+const SORT_PARAM_MAP: Record<string, string> = {
+  gain: 'reward',
+  highScore: 'score',
+}
+
 function getSortValue(course: Course, field: SortCriterion['field']): number {
   if (!course.ratings)
     return 0
   if (field === 'overall') {
-    const { easiness, reward, score, teacherStyle } = course.ratings
-    return (reward + score + easiness + teacherStyle) / 4
+    const { easiness, gain, highScore, teacherStyle } = course.ratings
+    return (gain + highScore + easiness + teacherStyle) / 4
   }
   return course.ratings[field]
 }
@@ -22,8 +28,8 @@ export const useCourseStore = defineStore('course', () => {
   const searchQuery = ref('')
   const sortCriteria = ref<SortCriterion[]>([
     { field: 'overall', label: '綜合平均', direction: 'desc', enabled: false },
-    { field: 'reward', label: '收穫', direction: 'desc', enabled: false },
-    { field: 'score', label: '分數', direction: 'desc', enabled: false },
+    { field: 'gain', label: '收穫', direction: 'desc', enabled: false },
+    { field: 'highScore', label: '分數', direction: 'desc', enabled: false },
     { field: 'easiness', label: '輕鬆', direction: 'desc', enabled: false },
     { field: 'teacherStyle', label: '教師風格', direction: 'desc', enabled: false },
   ])
@@ -59,7 +65,9 @@ export const useCourseStore = defineStore('course', () => {
     isLoading.value = true
     try {
       const active = sortCriteria.value.find(c => c.enabled)
-      const sort = active ? `${active.field}:${active.direction}` : undefined
+      const sort = active
+        ? `${SORT_PARAM_MAP[active.field] ?? active.field}:${active.direction}`
+        : undefined
       courses.value = await getCourses({ q: searchQuery.value, sort })
     }
     finally {

@@ -10,14 +10,14 @@ const mockCourses: Course[] = [
     name: '資料結構',
     teacher: '王小明',
     tags: ['必修'],
-    ratings: { reward: 4.5, score: 4.0, easiness: 3.5, teacherStyle: 4.2 },
+    ratings: { gain: 4.5, highScore: 4.0, easiness: 3.5, teacherStyle: 4.2 },
   },
   {
     id: 2,
     name: '演算法',
     teacher: '李大華',
     tags: ['選修'],
-    ratings: { reward: 4.0, score: 3.5, easiness: 3.0, teacherStyle: 4.0 },
+    ratings: { gain: 4.0, highScore: 3.5, easiness: 3.0, teacherStyle: 4.0 },
   },
 ]
 

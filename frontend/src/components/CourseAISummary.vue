@@ -15,8 +15,8 @@ const emit = defineEmits<{
       title: string
       content: string
       ratings: {
-        reward: number
-        score: number
+        gain: number
+        highScore: number
         easiness: number
         teacherStyle: number
       }
@@ -33,8 +33,8 @@ function handleSubmitReview(payload: {
   title: string
   content: string
   ratings: {
-    reward: number
-    score: number
+    gain: number
+    highScore: number
     easiness: number
     teacherStyle: number
   }

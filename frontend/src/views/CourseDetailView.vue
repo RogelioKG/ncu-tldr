@@ -50,8 +50,8 @@ async function handleSubmitReview(payload: {
   title: string
   content: string
   ratings: {
-    reward: number
-    score: number
+    gain: number
+    highScore: number
     easiness: number
     teacherStyle: number
   }
@@ -62,8 +62,8 @@ async function handleSubmitReview(payload: {
   const reviewCount = selected.summary?.reviewCount ?? 0
   const nextCount = reviewCount + 1
   const nextRatings = {
-    reward: Number(((((selected.ratings?.reward ?? 0) * reviewCount) + payload.ratings.reward) / nextCount).toFixed(2)),
-    score: Number(((((selected.ratings?.score ?? 0) * reviewCount) + payload.ratings.score) / nextCount).toFixed(2)),
+    gain: Number(((((selected.ratings?.gain ?? 0) * reviewCount) + payload.ratings.gain) / nextCount).toFixed(2)),
+    highScore: Number(((((selected.ratings?.highScore ?? 0) * reviewCount) + payload.ratings.highScore) / nextCount).toFixed(2)),
     easiness: Number(((((selected.ratings?.easiness ?? 0) * reviewCount) + payload.ratings.easiness) / nextCount).toFixed(2)),
     teacherStyle: Number(((((selected.ratings?.teacherStyle ?? 0) * reviewCount) + payload.ratings.teacherStyle) / nextCount).toFixed(2)),
   }

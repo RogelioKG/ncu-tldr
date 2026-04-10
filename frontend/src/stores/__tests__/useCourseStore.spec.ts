@@ -20,7 +20,7 @@ describe('useCourseStore', () => {
         name: '演算法',
         teacher: '王大明',
         tags: ['實用'],
-        ratings: { reward: 4.5, score: 4, easiness: 3, teacherStyle: 4.5 },
+        ratings: { gain: 4.5, highScore: 4, easiness: 3, teacherStyle: 4.5 },
       },
     ])
 
@@ -38,14 +38,14 @@ describe('useCourseStore', () => {
         name: '演算法',
         teacher: '王大明',
         tags: ['實用'],
-        ratings: { reward: 4.5, score: 4, easiness: 3, teacherStyle: 4.5 },
+        ratings: { gain: 4.5, highScore: 4, easiness: 3, teacherStyle: 4.5 },
       },
       {
         id: 2,
         name: '線性代數',
         teacher: '林博士',
         tags: ['理論'],
-        ratings: { reward: 4, score: 3.5, easiness: 2.5, teacherStyle: 3.5 },
+        ratings: { gain: 4, highScore: 3.5, easiness: 2.5, teacherStyle: 3.5 },
       },
     ]
     store.setSearchQuery('演算法')
@@ -60,7 +60,7 @@ describe('useCourseStore', () => {
       name: '演算法',
       teacher: '王大明',
       tags: [],
-      ratings: { reward: 4, score: 4, easiness: 4, teacherStyle: 4 },
+      ratings: { gain: 4, highScore: 4, easiness: 4, teacherStyle: 4 },
       summary: {
         overview: 'x',
         targetAudience: 'x',
@@ -73,13 +73,13 @@ describe('useCourseStore', () => {
       },
     }]
     store.applyReviewRatings(1, {
-      reward: 4.5,
-      score: 4.2,
+      gain: 4.5,
+      highScore: 4.2,
       easiness: 3.8,
       teacherStyle: 4.6,
     })
     const updated = store.courses.find(c => c.id === 1)
-    expect(updated?.ratings?.reward).toBe(4.5)
+    expect(updated?.ratings?.gain).toBe(4.5)
     expect(updated?.summary?.reviewCount).toBe(4)
   })
 })
