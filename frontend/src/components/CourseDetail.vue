@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Course } from '@/types'
+import type { Course, CourseComment } from '@/types'
 import { computed } from 'vue'
 import CourseAISummary from '@/components/CourseAISummary.vue'
 import CourseBasicInfo from '@/components/CourseBasicInfo.vue'
@@ -10,6 +10,8 @@ import { useSavedCourses } from '@/composables/useSavedCourses'
 
 const props = defineProps<{
   course: Course
+  reviews?: CourseComment[]
+  comments?: CourseComment[]
 }>()
 const emit = defineEmits<{
   reply: [{ parentId: number, content: string }]
@@ -117,7 +119,7 @@ function handleSubmitReview(payload: {
             @submit-review="handleSubmitReview"
           />
           <CourseComments
-            :comments="course.comments ?? []"
+            :comments="comments ?? []"
             @reply="handleReply"
           />
         </div>

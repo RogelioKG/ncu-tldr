@@ -2,48 +2,39 @@
 import { computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import CourseDetail from '@/components/CourseDetail.vue'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useCommentStore } from '@/stores/useCommentStore'
 import { useCourseStore } from '@/stores/useCourseStore'
-import { useDiscussionStore } from '@/stores/useDiscussionStore'
+import { useReviewStore } from '@/stores/useReviewStore'
 
 const route = useRoute()
-const authStore = useAuthStore()
 const courseStore = useCourseStore()
-const discussionStore = useDiscussionStore()
+const reviewStore = useReviewStore()
+const commentStore = useCommentStore()
 
 const courseId = computed(() => {
   const id = route.params.id
   return typeof id === 'string' ? Number.parseInt(id, 10) : Number(id)
 })
 
-const course = computed(() => {
-  const selected = courseStore.selectedCourse
-  if (selected && selected.id === courseId.value) {
-    const discussions = discussionStore.getDiscussions(selected.id)
-    return {
-      ...selected,
-      comments: discussions.length > 0 ? discussions : (selected.comments ?? []),
-    }
-  }
-  return null
-})
+const course = computed(() => courseStore.selectedCourse)
+const reviews = computed(() => reviewStore.getCourseReviews(courseId.value))
+const comments = computed(() => commentStore.getCourseComments(courseId.value))
 
 async function loadData() {
   if (Number.isNaN(courseId.value))
     return
   await courseStore.fetchCourseById(courseId.value)
-  await discussionStore.fetchDiscussions(courseId.value)
+  await reviewStore.fetchReviews(courseId.value)
+  await commentStore.fetchComments(courseId.value)
 }
 
 async function handleReply(payload: { parentId: number, content: string }) {
   if (Number.isNaN(courseId.value))
     return
-  await discussionStore.addReply(
-    courseId.value,
-    payload.parentId,
-    payload.content,
-    authStore.displayName ?? undefined,
-  )
+  await commentStore.addReply(courseId.value, {
+    content: payload.content,
+    parentId: payload.parentId,
+  })
 }
 
 async function handleSubmitReview(payload: {
@@ -67,8 +58,7 @@ async function handleSubmitReview(payload: {
     easiness: Number(((((selected.ratings?.easiness ?? 0) * reviewCount) + payload.ratings.easiness) / nextCount).toFixed(2)),
     teacherStyle: Number(((((selected.ratings?.teacherStyle ?? 0) * reviewCount) + payload.ratings.teacherStyle) / nextCount).toFixed(2)),
   }
-  await discussionStore.submitDiscussion(courseId.value, {
-    user: authStore.displayName || '匿名同學',
+  await reviewStore.submitReview(courseId.value, {
     title: payload.title,
     content: payload.content,
     ratings: payload.ratings,
@@ -76,13 +66,8 @@ async function handleSubmitReview(payload: {
   courseStore.applyReviewRatings(courseId.value, nextRatings)
 }
 
-watch(courseId, async () => {
-  await loadData()
-})
-
-onMounted(async () => {
-  await loadData()
-})
+watch(courseId, loadData)
+onMounted(loadData)
 </script>
 
 <template>
@@ -90,12 +75,16 @@ onMounted(async () => {
     <div v-if="course">
       <CourseDetail
         :course="course"
+        :reviews="reviews"
+        :comments="comments"
         @reply="handleReply"
         @submit-review="handleSubmitReview"
       />
     </div>
     <div v-else class="not-found">
-      <p>找不到該課程資訊。</p>
+      <p>
+        找不到該課程資訊。
+      </p>
     </div>
   </div>
 </template>

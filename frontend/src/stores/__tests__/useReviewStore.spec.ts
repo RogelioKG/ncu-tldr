@@ -7,6 +7,10 @@ vi.mock('@/api/reviews', () => ({
   createReview: vi.fn(),
 }))
 
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => ({ token: 'mock-token' }),
+}))
+
 describe('useReviewStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -32,7 +36,7 @@ describe('useReviewStore', () => {
     expect(store.totalReviewCount).toBe(1)
   })
 
-  it('submits review with ratings metadata', async () => {
+  it('submits review and prepends to list', async () => {
     const { createReview } = await import('@/api/reviews')
     vi.mocked(createReview).mockResolvedValueOnce({
       id: 2,
@@ -46,7 +50,6 @@ describe('useReviewStore', () => {
 
     const store = useReviewStore()
     const saved = await store.submitReview(1, {
-      user: 'User',
       title: '心得',
       content: '內容',
       ratings: {
@@ -56,7 +59,7 @@ describe('useReviewStore', () => {
         teacherStyle: 4,
       },
     })
-    expect(saved.ratings?.gain).toBe(5)
+    expect(saved.id).toBe(2)
     expect(store.getCourseReviews(1)).toHaveLength(1)
   })
 })
