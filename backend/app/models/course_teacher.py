@@ -1,3 +1,4 @@
+import sqlalchemy as sa
 from sqlalchemy import ForeignKey, Integer, SmallInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,7 +18,7 @@ class CourseTeacher(Base):
         ForeignKey("teachers.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    sort_order: Mapped[int | None] = mapped_column(SmallInteger, server_default="0")
+    sort_order: Mapped[int | None] = mapped_column(SmallInteger, server_default=sa.text("0"))
 
     course: Mapped["Course"] = relationship(back_populates="course_teachers")  # type: ignore[name-defined]  # noqa: F821
     teacher: Mapped["Teacher"] = relationship(back_populates="course_teachers")  # type: ignore[name-defined]  # noqa: F821

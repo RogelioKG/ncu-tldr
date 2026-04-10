@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
+import sqlalchemy as sa
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -23,13 +24,13 @@ class Comment(Base):
     )
     title: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    likes: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
-    dislikes: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    likes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=sa.text("0"))
+    dislikes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=sa.text("0"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    user: Mapped[Optional["User"]] = relationship("User", lazy="joined")  # type: ignore[name-defined]  # noqa: F821
+    user: Mapped[Optional["User"]] = relationship("User", lazy="select")  # type: ignore[name-defined]  # noqa: F821
 
     __table_args__ = (
         Index("idx_comments_course_id", "course_id"),
