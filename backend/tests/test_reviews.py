@@ -40,3 +40,32 @@ async def test_list_reviews_invalid_course_returns_empty(client: AsyncClient) ->
     resp = await client.get("/api/v1/courses/99999/reviews")
     assert resp.status_code == 200
     assert resp.json() == []
+
+
+@pytest.mark.asyncio
+async def test_create_review_authenticated(client: AsyncClient) -> None:
+    """Authenticated users can attempt to create reviews (auth is accepted)."""
+    reg = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "reviewer2@example.com",
+            "password": "pass123",
+            "displayName": "Review Author",
+        },
+    )
+    assert reg.status_code == 201
+    token = reg.json()["accessToken"]
+
+    resp = await client.post(
+        "/api/v1/courses/99999/reviews",
+        json={
+            "title": "Good course",
+            "content": "Really enjoyed this course",
+            "ratings": {"gain": 4, "highScore": 4, "easiness": 3, "teacherStyle": 5},
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    # Auth should pass (no 401/403). May get 404/422/500 if course doesn't exist.
+    assert resp.status_code not in (401, 403), (
+        f"Expected auth to pass, got {resp.status_code}: {resp.text}"
+    )

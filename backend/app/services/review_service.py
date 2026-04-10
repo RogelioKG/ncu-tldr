@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.review import Review
 from app.models.user import User
+from app.repositories.course_repo import course_repo
 from app.repositories.review_repo import review_repo
 from app.schemas.review import CourseCommentOut, RatingsOut, ReviewCreate
 
@@ -41,6 +42,12 @@ class ReviewService:
         user: User,
         data: ReviewCreate,
     ) -> CourseCommentOut:
+        course = await course_repo.get_by_id(db, course_id)
+        if course is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Course {course_id} not found",
+            )
         review = await review_repo.create(
             db,
             course_id=course_id,
