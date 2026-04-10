@@ -20,7 +20,7 @@ class WishlistRepository:
         *,
         course_name: str,
         teacher_name: str,
-        user_id: uuid.UUID,
+        user_id: uuid.UUID | None,
     ) -> WishlistItem:
         stmt = (
             pg_insert(WishlistItem)
