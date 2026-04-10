@@ -21,7 +21,7 @@ class RatingsOut(BaseModel):
     high_score: float = Field(alias="highScore")
     easiness: float
     teacher_style: float = Field(alias="teacherStyle")
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class CourseCommentOut(BaseModel):
@@ -34,4 +34,4 @@ class CourseCommentOut(BaseModel):
     dislikes: int
     parent_id: int | None = Field(alias="parentId", default=None)
     ratings: RatingsOut | None = None  # Only present for reviews, not comments
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)

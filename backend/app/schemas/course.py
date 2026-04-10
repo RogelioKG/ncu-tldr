@@ -6,7 +6,7 @@ class RatingsOut(BaseModel):
     high_score: float = Field(alias="highScore", default=0.0)
     easiness: float = 0.0
     teacher_style: float = Field(alias="teacherStyle", default=0.0)
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class GradingItem(BaseModel):
@@ -23,7 +23,7 @@ class SummaryOut(BaseModel):
     grading_items: list[GradingItem] = Field(alias="gradingItems", default_factory=list)
     notes: str = ""
     review_count: int = Field(alias="reviewCount", default=0)
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class CourseOut(BaseModel):
@@ -39,7 +39,7 @@ class CourseOut(BaseModel):
     credits: int | None = None
     type: str | None = None
     summary: SummaryOut | None = None
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class CoursePairOut(BaseModel):
@@ -50,3 +50,4 @@ class CoursePairOut(BaseModel):
 
 class CoursePairsResponse(BaseModel):
     pairs: list[CoursePairOut]
+    model_config = ConfigDict(populate_by_name=True)
