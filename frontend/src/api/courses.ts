@@ -1,76 +1,98 @@
-import type { Course } from '@/types'
+import type { Course, CourseSummary } from '@/types'
 import { ApiError, request } from './client'
 
-/** Raw shape returned by the backend API */
-interface RawCourseTime {
-  day: number
-  period: string
+/** Shape returned by GET /api/v1/courses and GET /api/v1/courses/{id} */
+interface RawRatings {
+  gain: number
+  highScore: number
+  easiness: number
+  teacherStyle: number
+}
+
+interface RawGradingItem {
+  label: string
+  percentage: number
+}
+
+interface RawSummary {
+  overview: string
+  targetAudience: string
+  textbook: string
+  prerequisites: string
+  weeklyHours: string
+  gradingItems: RawGradingItem[]
+  notes: string
+  reviewCount: number
 }
 
 interface RawCourse {
   id: number
-  externalId: number
-  classNo: string
-  title: string
-  credit: number
-  passwordCard: string
-  limitCnt: number | null
-  admitCnt: number
-  waitCnt: number
-  courseType: string
-  lastSemester: string | null
-  teachers: string[]
-  departments: string[]
-  colleges: string[]
-  times: RawCourseTime[]
+  name: string
+  teacher: string
+  tags: string[]
+  ratings: RawRatings
+  semester: string | null
+  department: string | null
+  code: string | null
+  time: string | null
+  credits: number | null
+  type: string | null
+  summary: RawSummary | null
 }
 
-const DAY_LABELS = ['', '一', '二', '三', '四', '五', '六', '日']
-
-function formatTimes(times: RawCourseTime[]): string {
-  if (times.length === 0)
-    return ''
-  const grouped = new Map<number, string[]>()
-  for (const t of times) {
-    const list = grouped.get(t.day) ?? []
-    list.push(t.period)
-    grouped.set(t.day, list)
+function normalizeRatings(raw: RawRatings) {
+  return {
+    gain: raw.gain,
+    highScore: raw.highScore,
+    easiness: raw.easiness,
+    teacherStyle: raw.teacherStyle,
   }
-  return Array.from(grouped.entries(), ([day, periods]) => `週${DAY_LABELS[day] ?? day} ${periods.join(',')}`)
-    .join(' / ')
+}
+
+function normalizeSummary(raw: RawSummary): CourseSummary {
+  return {
+    overview: raw.overview,
+    targetAudience: raw.targetAudience,
+    textbook: raw.textbook,
+    prerequisites: raw.prerequisites,
+    weeklyHours: raw.weeklyHours,
+    gradingItems: raw.gradingItems,
+    notes: raw.notes,
+    reviewCount: raw.reviewCount,
+  }
 }
 
 function normalizeApiCourse(raw: RawCourse): Course {
   return {
     id: raw.id,
-    name: raw.title,
-    teacher: raw.teachers.join('、'),
-    tags: [raw.courseType === 'REQUIRED' ? '必修' : '選修', ...raw.departments],
-    semester: raw.lastSemester ?? undefined,
-    department: raw.departments.join('、'),
-    code: raw.classNo,
-    time: formatTimes(raw.times),
-    credits: raw.credit,
-    type: raw.courseType,
+    name: raw.name,
+    teacher: raw.teacher,
+    tags: raw.tags,
+    ratings: normalizeRatings(raw.ratings),
+    semester: raw.semester ?? undefined,
+    department: raw.department ?? undefined,
+    code: raw.code ?? undefined,
+    time: raw.time ?? undefined,
+    credits: raw.credits ?? undefined,
+    type: raw.type ?? undefined,
+    summary: raw.summary ? normalizeSummary(raw.summary) : undefined,
   }
 }
 
 export async function getCourses(params?: { q?: string, sort?: string }): Promise<Course[]> {
   const query = new URLSearchParams()
-  if (params?.q) {
+  if (params?.q)
     query.set('q', params.q)
-  }
-  if (params?.sort) {
+  if (params?.sort)
     query.set('sort', params.sort)
-  }
   const suffix = query.toString() ? `?${query.toString()}` : ''
-  const raw = await request<RawCourse[]>(`/api/courses${suffix}`)
+  const raw = await request<RawCourse[]>(`/api/v1/courses${suffix}`)
   return raw.map(normalizeApiCourse)
 }
 
 export async function getCourseById(courseId: number): Promise<Course | null> {
   try {
-    const raw = await request<RawCourse>(`/api/courses/${courseId}`)
+    const raw = await request<RawCourse>(`/api/v1/courses/${courseId}`)
     return normalizeApiCourse(raw)
   }
   catch (err) {
