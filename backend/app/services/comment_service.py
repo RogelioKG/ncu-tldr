@@ -1,9 +1,11 @@
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.comment import Comment
 from app.models.user import User
 from app.repositories.comment_repo import comment_repo
 from app.schemas.comment import CommentCreate
+from app.schemas.reaction import ReactionResponse
 from app.schemas.review import CourseCommentOut
 
 
@@ -45,6 +47,21 @@ class CommentService:
             content=data.content,
         )
         return _comment_to_out(comment)
+
+
+    async def react_to_comment(
+        self,
+        db: AsyncSession,
+        comment_id: int,
+        reaction: str,
+    ) -> ReactionResponse:
+        comment = await comment_repo.react(db, comment_id, reaction)
+        if comment is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Comment {comment_id} not found",
+            )
+        return ReactionResponse(likes=comment.likes, dislikes=comment.dislikes)
 
 
 comment_service = CommentService()
