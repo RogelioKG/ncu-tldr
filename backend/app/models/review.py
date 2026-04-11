@@ -26,6 +26,9 @@ class Review(Base):
     teacher_style: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     likes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=sa.text("0"))
     dislikes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=sa.text("0"))
+    semester: Mapped[str | None] = mapped_column(Text, nullable=True)
+    weekly_hours: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    textbook: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
