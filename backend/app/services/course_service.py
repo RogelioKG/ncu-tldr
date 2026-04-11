@@ -3,7 +3,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.course import Course
 from app.repositories.course_repo import course_repo
-from app.schemas.course import CoursePairOut, CoursePairsResponse, CourseOut, RatingsOut, SummaryOut
+from app.schemas.course import (
+    CoursePairOut,
+    CoursePairsResponse,
+    CourseOut,
+    RatingsOut,
+    SummaryOut,
+)
 
 _DAY_MAP = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六", 7: "日"}
 
@@ -57,7 +63,9 @@ def _to_course_out(
     row: tuple,
     include_summary: bool = False,
 ) -> CourseOut:
-    course, avg_gain, avg_high_score, avg_easiness, avg_teacher_style, review_count = row
+    course, avg_gain, avg_high_score, avg_easiness, avg_teacher_style, review_count = (
+        row
+    )
 
     summary = None
     if include_summary:
@@ -101,7 +109,9 @@ class CourseService:
         sort: str | None = None,
     ) -> list[CourseOut]:
         sort_field, sort_dir = _parse_sort(sort)
-        rows = await course_repo.list_courses(db, q=q, sort_field=sort_field, sort_dir=sort_dir)
+        rows = await course_repo.list_courses(
+            db, q=q, sort_field=sort_field, sort_dir=sort_dir
+        )
         return [_to_course_out(row) for row in rows]
 
     async def get_course(self, db: AsyncSession, course_id: int) -> CourseOut:

@@ -68,7 +68,6 @@ class ReviewService:
         )
         return _review_to_out(review)
 
-
     async def list_my_reviews(self, db: AsyncSession, user: User) -> list[MyReviewOut]:
         rows = await review_repo.list_by_user(db, user.id)
         return [

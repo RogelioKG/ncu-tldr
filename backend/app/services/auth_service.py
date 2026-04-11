@@ -36,7 +36,9 @@ class AuthService:
     async def login(self, db: AsyncSession, req: LoginRequest) -> TokenResponse:
         user = await user_repo.get_by_email(db, req.email)
         if not user or not verify_password(req.password, user.hashed_password):
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
+            raise HTTPException(
+                status.HTTP_401_UNAUTHORIZED, "Invalid email or password"
+            )
         return self._build_token_response(user)
 
 

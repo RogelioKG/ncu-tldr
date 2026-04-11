@@ -48,7 +48,6 @@ class CommentService:
         )
         return _comment_to_out(comment)
 
-
     async def react_to_comment(
         self,
         db: AsyncSession,

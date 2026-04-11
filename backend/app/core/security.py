@@ -4,7 +4,9 @@ from datetime import datetime, timedelta, timezone
 import bcrypt
 from jose import jwt
 
-_SECRET_KEY: str = os.environ.get("JWT_SECRET_KEY", "insecure-dev-secret-change-in-prod")
+_SECRET_KEY: str = os.environ.get(
+    "JWT_SECRET_KEY", "insecure-dev-secret-change-in-prod"
+)
 _ALGORITHM = "HS256"
 _ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
@@ -18,7 +20,9 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def create_access_token(sub: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=_ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(
+        minutes=_ACCESS_TOKEN_EXPIRE_MINUTES
+    )
     payload = {"sub": sub, "exp": expire}
     return jwt.encode(payload, _SECRET_KEY, algorithm=_ALGORITHM)
 
