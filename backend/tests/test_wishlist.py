@@ -37,7 +37,9 @@ async def test_add_to_wishlist_twice_increments_vote(client: AsyncClient) -> Non
 
 
 @pytest.mark.asyncio
-async def test_add_to_wishlist_different_teacher_creates_new(client: AsyncClient) -> None:
+async def test_add_to_wishlist_different_teacher_creates_new(
+    client: AsyncClient,
+) -> None:
     resp1 = await client.post(
         "/api/v1/wishlist",
         json={"name": "Data Science", "teacher": "Prof. A"},

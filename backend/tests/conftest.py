@@ -1,15 +1,16 @@
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 import app.models  # noqa: F401 — register all ORM models with Base
 from app.db.base import Base
 from app.db.deps import get_db
 from main import app
 
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/ncu_tldr_test"
+TEST_DATABASE_URL = (
+    "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/ncu_tldr_test"
+)
 
 _ENUM_SETUP_SQL = """
 DO $$
