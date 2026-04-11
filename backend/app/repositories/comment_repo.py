@@ -40,4 +40,17 @@ class CommentRepository:
         return comment
 
 
+    async def react(self, db: AsyncSession, comment_id: int, reaction: str) -> Comment | None:
+        result = await db.execute(select(Comment).where(Comment.id == comment_id))
+        comment = result.scalar_one_or_none()
+        if comment is None:
+            return None
+        if reaction == "like":
+            comment.likes += 1
+        else:
+            comment.dislikes += 1
+        await db.flush()
+        return comment
+
+
 comment_repo = CommentRepository()
