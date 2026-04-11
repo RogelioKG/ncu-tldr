@@ -28,7 +28,7 @@ $BackendDir = Split-Path -Parent $ScriptDir
 $RootDir = Split-Path -Parent $BackendDir
 
 # DB connection defaults (override via env vars)
-$DB_HOST     = if ($env:DB_HOST)     { $env:DB_HOST }     else { "localhost" }
+$DB_HOST     = if ($env:DB_HOST)     { $env:DB_HOST }     else { "127.0.0.1" }
 $DB_PORT     = if ($env:DB_PORT)     { $env:DB_PORT }     else { "5432" }
 $DB_USER     = if ($env:DB_USER)     { $env:DB_USER }     else { "postgres" }
 $DB_PASSWORD = if ($env:DB_PASSWORD) { $env:DB_PASSWORD } else { "postgres" }

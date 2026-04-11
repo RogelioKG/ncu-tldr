@@ -19,7 +19,7 @@ BACKEND_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 ROOT_DIR="$(cd "$BACKEND_DIR/.." && pwd)"
 
 # DB connection defaults (override via env vars)
-DB_HOST="${DB_HOST:-localhost}"
+DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-5432}"
 DB_USER="${DB_USER:-postgres}"
 DB_PASSWORD="${DB_PASSWORD:-postgres}"

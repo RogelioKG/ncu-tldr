@@ -61,7 +61,7 @@ powershell -ExecutionPolicy Bypass -File migrate_and_seed.ps1
 
 | 變數          | 預設值       | 說明         |
 | ------------- | ------------ | ------------ |
-| `DB_HOST`     | `localhost`  | 資料庫主機   |
+| `DB_HOST`     | `127.0.0.1`  | 資料庫主機   |
 | `DB_PORT`     | `5432`       | 資料庫埠號   |
 | `DB_USER`     | `postgres`   | 資料庫使用者 |
 | `DB_PASSWORD` | `postgres`   | 資料庫密碼   |

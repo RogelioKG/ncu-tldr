@@ -9,7 +9,7 @@ from app.db.base import Base
 from app.db.deps import get_db
 from main import app
 
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/ncu_tldr_test"
+TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/ncu_tldr_test"
 
 _ENUM_SETUP_SQL = """
 DO $$
