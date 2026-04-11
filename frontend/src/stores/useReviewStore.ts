@@ -1,7 +1,9 @@
+import type { ReactionType } from '@/api/likes'
 import type { SubmitReviewInput } from '@/api/reviews'
 import type { CourseComment } from '@/types'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { reactToReview } from '@/api/likes'
 import { createReview, getReviews } from '@/api/reviews'
 import { useAuthStore } from '@/stores/useAuthStore'
 
@@ -43,10 +45,29 @@ export const useReviewStore = defineStore('review', () => {
     return reviewsByCourse.value[courseId] ?? []
   }
 
+  async function reactToItem(courseId: number, reviewId: number, reaction: ReactionType): Promise<void> {
+    const current = reviewsByCourse.value[courseId] ?? []
+    reviewsByCourse.value = {
+      ...reviewsByCourse.value,
+      [courseId]: current.map(r =>
+        r.id !== reviewId
+          ? r
+          : {
+              ...r,
+              likes: reaction === 'like' ? r.likes + 1 : r.likes,
+              dislikes: reaction === 'dislike' ? r.dislikes + 1 : r.dislikes,
+            },
+      ),
+    }
+    const authStore = useAuthStore()
+    await reactToReview(courseId, reviewId, reaction, authStore.token ?? undefined)
+  }
+
   return {
     fetchReviews,
     getCourseReviews,
     isLoading,
+    reactToItem,
     reviewsByCourse,
     submitReview,
     totalReviewCount,

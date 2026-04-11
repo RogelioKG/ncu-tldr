@@ -1,8 +1,10 @@
 import type { CreateCommentPayload } from '@/api/comments'
+import type { ReactionType } from '@/api/likes'
 import type { CourseComment } from '@/types'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { createComment, getComments } from '@/api/comments'
+import { reactToComment } from '@/api/likes'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 export const useCommentStore = defineStore('comment', () => {
@@ -42,11 +44,30 @@ export const useCommentStore = defineStore('comment', () => {
     return created
   }
 
+  async function reactToItem(courseId: number, commentId: number, reaction: ReactionType): Promise<void> {
+    const current = commentsByCourse.value[courseId] ?? []
+    commentsByCourse.value = {
+      ...commentsByCourse.value,
+      [courseId]: current.map(c =>
+        c.id !== commentId
+          ? c
+          : {
+              ...c,
+              likes: reaction === 'like' ? c.likes + 1 : c.likes,
+              dislikes: reaction === 'dislike' ? c.dislikes + 1 : c.dislikes,
+            },
+      ),
+    }
+    const authStore = useAuthStore()
+    await reactToComment(courseId, commentId, reaction, authStore.token ?? undefined)
+  }
+
   return {
     addReply,
     commentsByCourse,
     fetchComments,
     getCourseComments,
     isLoading,
+    reactToItem,
   }
 })
