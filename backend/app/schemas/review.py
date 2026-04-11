@@ -13,6 +13,9 @@ class ReviewCreate(BaseModel):
     title: str = ""
     content: str
     ratings: RatingsIn
+    semester: str | None = None
+    weekly_hours: int | None = Field(alias="weeklyHours", default=None)
+    textbook: str | None = None
     model_config = ConfigDict(populate_by_name=True)
 
 
@@ -34,4 +37,12 @@ class CourseCommentOut(BaseModel):
     dislikes: int
     parent_id: int | None = Field(alias="parentId", default=None)
     ratings: RatingsOut | None = None  # Only present for reviews, not comments
+    semester: str | None = None
+    weekly_hours: int | None = Field(alias="weeklyHours", default=None)
+    textbook: str | None = None
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class MyReviewOut(CourseCommentOut):
+    course_name: str = Field(alias="courseName")
+    course_id: int = Field(alias="courseId")
