@@ -52,7 +52,6 @@ class ReviewRepository:
         await db.refresh(review, attribute_names=["user"])
         return review
 
-
     async def list_by_user(
         self, db: AsyncSession, user_id: uuid.UUID
     ) -> list[tuple[Review, str]]:
@@ -65,7 +64,9 @@ class ReviewRepository:
         )
         return [(row[0], row[1]) for row in result.all()]
 
-    async def react(self, db: AsyncSession, review_id: int, reaction: str) -> Review | None:
+    async def react(
+        self, db: AsyncSession, review_id: int, reaction: str
+    ) -> Review | None:
         result = await db.execute(select(Review).where(Review.id == review_id))
         review = result.scalar_one_or_none()
         if review is None:

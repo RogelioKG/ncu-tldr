@@ -5,8 +5,6 @@ from sqlalchemy.orm import selectinload
 from app.models.course import Course
 from app.models.course_department import CourseDepartment
 from app.models.course_teacher import CourseTeacher
-from app.models.course_time import CourseTime
-from app.models.department import Department
 from app.models.review import Review
 from app.models.teacher import Teacher
 
@@ -40,24 +38,35 @@ class CourseRepository:
         stmt = (
             select(
                 Course,
-                func.coalesce(cast(ratings_sq.c.avg_gain, Float), 0.0).label("avg_gain"),
-                func.coalesce(cast(ratings_sq.c.avg_high_score, Float), 0.0).label("avg_high_score"),
-                func.coalesce(cast(ratings_sq.c.avg_easiness, Float), 0.0).label("avg_easiness"),
-                func.coalesce(cast(ratings_sq.c.avg_teacher_style, Float), 0.0).label("avg_teacher_style"),
+                func.coalesce(cast(ratings_sq.c.avg_gain, Float), 0.0).label(
+                    "avg_gain"
+                ),
+                func.coalesce(cast(ratings_sq.c.avg_high_score, Float), 0.0).label(
+                    "avg_high_score"
+                ),
+                func.coalesce(cast(ratings_sq.c.avg_easiness, Float), 0.0).label(
+                    "avg_easiness"
+                ),
+                func.coalesce(cast(ratings_sq.c.avg_teacher_style, Float), 0.0).label(
+                    "avg_teacher_style"
+                ),
                 func.coalesce(ratings_sq.c.review_count, 0).label("review_count"),
             )
             .outerjoin(ratings_sq, ratings_sq.c.course_id == Course.id)
             .options(
-                selectinload(Course.course_teachers).selectinload(CourseTeacher.teacher),
+                selectinload(Course.course_teachers).selectinload(
+                    CourseTeacher.teacher
+                ),
                 selectinload(Course.course_times),
-                selectinload(Course.course_departments).selectinload(CourseDepartment.department),
+                selectinload(Course.course_departments).selectinload(
+                    CourseDepartment.department
+                ),
             )
         )
 
         if q:
             stmt = (
-                stmt
-                .outerjoin(CourseTeacher, CourseTeacher.course_id == Course.id)
+                stmt.outerjoin(CourseTeacher, CourseTeacher.course_id == Course.id)
                 .outerjoin(Teacher, Teacher.id == CourseTeacher.teacher_id)
                 .where(
                     or_(
@@ -91,9 +100,13 @@ class CourseRepository:
             select(Course)
             .where(Course.id == course_id)
             .options(
-                selectinload(Course.course_teachers).selectinload(CourseTeacher.teacher),
+                selectinload(Course.course_teachers).selectinload(
+                    CourseTeacher.teacher
+                ),
                 selectinload(Course.course_times),
-                selectinload(Course.course_departments).selectinload(CourseDepartment.department),
+                selectinload(Course.course_departments).selectinload(
+                    CourseDepartment.department
+                ),
             )
         )
         return result.scalars().first()

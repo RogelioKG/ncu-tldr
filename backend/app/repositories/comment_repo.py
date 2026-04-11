@@ -39,8 +39,9 @@ class CommentRepository:
         await db.refresh(comment, attribute_names=["user"])
         return comment
 
-
-    async def react(self, db: AsyncSession, comment_id: int, reaction: str) -> Comment | None:
+    async def react(
+        self, db: AsyncSession, comment_id: int, reaction: str
+    ) -> Comment | None:
         result = await db.execute(select(Comment).where(Comment.id == comment_id))
         comment = result.scalar_one_or_none()
         if comment is None:
