@@ -2,7 +2,16 @@ import uuid
 from datetime import datetime
 
 import sqlalchemy as sa
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, SmallInteger, Text, func
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    SmallInteger,
+    Text,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -18,14 +27,20 @@ class Review(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    title: Mapped[str] = mapped_column(Text, nullable=False, server_default=sa.text("''"))
+    title: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=sa.text("''")
+    )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     gain: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     high_score: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     easiness: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     teacher_style: Mapped[int] = mapped_column(SmallInteger, nullable=False)
-    likes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=sa.text("0"))
-    dislikes: Mapped[int] = mapped_column(Integer, nullable=False, server_default=sa.text("0"))
+    likes: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=sa.text("0")
+    )
+    dislikes: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=sa.text("0")
+    )
     semester: Mapped[str | None] = mapped_column(Text, nullable=True)
     weekly_hours: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     textbook: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -39,7 +54,9 @@ class Review(Base):
         CheckConstraint("gain BETWEEN 1 AND 5", name="ck_reviews_gain"),
         CheckConstraint("high_score BETWEEN 1 AND 5", name="ck_reviews_high_score"),
         CheckConstraint("easiness BETWEEN 1 AND 5", name="ck_reviews_easiness"),
-        CheckConstraint("teacher_style BETWEEN 1 AND 5", name="ck_reviews_teacher_style"),
+        CheckConstraint(
+            "teacher_style BETWEEN 1 AND 5", name="ck_reviews_teacher_style"
+        ),
         Index("idx_reviews_course_id", "course_id"),
         Index("idx_reviews_user_id", "user_id"),
     )

@@ -23,5 +23,7 @@ class WishlistItem(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("course_name", "teacher_name", name="uq_wishlist_course_teacher"),
+        UniqueConstraint(
+            "course_name", "teacher_name", name="uq_wishlist_course_teacher"
+        ),
     )

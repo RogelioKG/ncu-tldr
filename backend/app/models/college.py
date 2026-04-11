@@ -17,6 +17,4 @@ class College(Base):
         back_populates="college"
     )  # type: ignore[name-defined]
 
-    __table_args__ = (
-        sa.UniqueConstraint("code", name="uq_colleges_code"),
-    )
+    __table_args__ = (sa.UniqueConstraint("code", name="uq_colleges_code"),)
