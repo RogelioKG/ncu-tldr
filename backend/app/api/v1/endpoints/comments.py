@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.deps import get_db
@@ -27,7 +27,9 @@ async def create_comment(
     return await comment_service.create_comment(db, course_id, current_user, data)
 
 
-@router.post("/{course_id}/comments/{comment_id}/react", response_model=ReactionResponse)
+@router.post(
+    "/{course_id}/comments/{comment_id}/react", response_model=ReactionResponse
+)
 async def react_to_comment(
     course_id: int,
     comment_id: int,
