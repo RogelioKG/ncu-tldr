@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useDiscussionStore } from '@/stores/useDiscussionStore'
-
-const discussionStore = useDiscussionStore()
-const groupedReviews = computed(() => Object.entries(discussionStore.discussionsByCourse))
+// TODO: Once backend implements GET /api/v1/auth/me/reviews,
+// replace this stub with: import { getMyReviews } from '@/api/reviews'
 </script>
 
 <template>
@@ -11,32 +8,13 @@ const groupedReviews = computed(() => Object.entries(discussionStore.discussions
     <h1 class="my-reviews__title">
       我的評價
     </h1>
-    <p class="my-reviews__subtitle">
-      目前共 {{ discussionStore.totalDiscussionCount }} 筆
-    </p>
-    <div v-if="groupedReviews.length === 0" class="my-reviews__empty">
-      目前還沒有提交任何評價
-    </div>
-    <div v-else class="my-reviews__groups">
-      <article
-        v-for="[courseId, reviews] in groupedReviews"
-        :key="courseId"
-        class="my-reviews__group"
-      >
-        <h2 class="my-reviews__group-title">
-          課程 #{{ courseId }}
-        </h2>
-        <ul class="my-reviews__list">
-          <li
-            v-for="review in reviews"
-            :key="review.id"
-            class="my-reviews__item"
-          >
-            <strong>{{ review.title }}</strong>
-            <p>{{ review.content }}</p>
-          </li>
-        </ul>
-      </article>
+    <div class="my-reviews__pending">
+      <p class="my-reviews__pending-text">
+        此功能需要後端支援，即將開放。
+      </p>
+      <p class="my-reviews__pending-hint">
+        開放後將顯示您對各課程提交的所有評價紀錄。
+      </p>
     </div>
   </section>
 </template>
@@ -49,43 +27,19 @@ const groupedReviews = computed(() => Object.entries(discussionStore.discussions
 }
 
 .my-reviews__title {
-  margin-bottom: var(--spacing-sm);
-}
-
-.my-reviews__subtitle {
-  color: var(--color-text-muted);
   margin-bottom: var(--spacing-lg);
 }
 
-.my-reviews__empty {
+.my-reviews__pending {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   padding: var(--spacing-lg);
-}
-
-.my-reviews__groups {
-  display: grid;
-  gap: var(--spacing-lg);
-}
-
-.my-reviews__group {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-}
-
-.my-reviews__group-title {
-  margin-bottom: var(--spacing-sm);
-}
-
-.my-reviews__list {
+  color: var(--color-text-muted);
   display: grid;
   gap: var(--spacing-sm);
 }
 
-.my-reviews__item {
-  border: 1px solid var(--color-background-alt);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md);
+.my-reviews__pending-hint {
+  font-size: 0.875rem;
 }
 </style>
