@@ -20,6 +20,35 @@ const isHovered = ref(false)
 const { isSaved, toggleSave } = useSavedCourses()
 const saved = computed(() => isSaved(props.course.id))
 
+const TITLE_MAX_CHARS = 8
+const TEACHER_LINE_MAX_CHARS = 10
+
+function truncateWithEllipsis(text: string, maxChars: number): string {
+  if (text.length <= maxChars)
+    return text
+  return `${text.slice(0, maxChars)}...`
+}
+
+const displayTitle = computed(() =>
+  truncateWithEllipsis(props.course.name, TITLE_MAX_CHARS),
+)
+
+const teacherLineFull = computed(() => `教師：${props.course.teacher}`)
+
+const displayTeacherLine = computed(() =>
+  truncateWithEllipsis(teacherLineFull.value, TEACHER_LINE_MAX_CHARS),
+)
+
+const courseNameTitleAttr = computed(() =>
+  props.course.name.length > TITLE_MAX_CHARS ? props.course.name : undefined,
+)
+
+const teacherLineTitleAttr = computed(() =>
+  teacherLineFull.value.length > TEACHER_LINE_MAX_CHARS
+    ? teacherLineFull.value
+    : undefined,
+)
+
 function handleToggleSave(e: Event) {
   e.stopPropagation()
   toggleSave(props.course.id)
@@ -51,12 +80,12 @@ function handleClick() {
         </button>
       </div>
       <header class="course-card__header">
-        <h2 class="course-card__title">
-          {{ course.name }}
+        <h2 class="course-card__title" :title="courseNameTitleAttr">
+          {{ displayTitle }}
         </h2>
         <div class="course-card__divider" />
-        <p class="course-card__teacher">
-          教師：{{ props.course.teacher }}
+        <p class="course-card__teacher" :title="teacherLineTitleAttr">
+          {{ displayTeacherLine }}
         </p>
       </header>
 
