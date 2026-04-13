@@ -1,9 +1,58 @@
 <script setup lang="ts">
 import type { Course } from '@/types'
+import { computed } from 'vue'
 
-defineProps<{
+const props = defineProps<{
   course: Course
 }>()
+
+const COURSE_TIME_TOKEN_REGEX = /^([^\d\s]+)\s*(\d+)$/
+
+const formattedTime = computed(() => formatCourseTime(props.course.time))
+const localizedType = computed(() => localizeCourseType(props.course.type))
+
+function formatCourseTime(rawTime: string | null | undefined): string {
+  if (!rawTime)
+    return '—'
+
+  const tokens = rawTime
+    .split('/')
+    .map(token => token.trim())
+    .filter(Boolean)
+
+  const dayMap = new Map<string, string[]>()
+
+  for (const token of tokens) {
+    const match = token.match(COURSE_TIME_TOKEN_REGEX)
+    if (!match)
+      continue
+
+    const day = match[1]
+    const period = match[2]
+    const periods = dayMap.get(day) ?? []
+    periods.push(period)
+    dayMap.set(day, periods)
+  }
+
+  if (!dayMap.size)
+    return rawTime
+
+  return Array.from(dayMap.entries())
+    .map(([day, periods]) => `${day} ${periods.join(', ')}`)
+    .join(' / ')
+}
+
+function localizeCourseType(type: string | null | undefined): string {
+  if (!type)
+    return '—'
+
+  const upperType = type.toUpperCase()
+  if (upperType === 'REQUIRED')
+    return '必修'
+  if (upperType === 'ELECTIVE')
+    return '選修'
+  return type
+}
 </script>
 
 <template>
@@ -27,7 +76,7 @@ defineProps<{
       </div>
       <div class="basic-info__card">
         <span class="basic-info__label">上課時間：</span>
-        <span class="basic-info__value">{{ course.time ?? '—' }}</span>
+        <span class="basic-info__value">{{ formattedTime }}</span>
       </div>
       <div class="basic-info__card">
         <span class="basic-info__label">學分數：</span>
@@ -35,7 +84,7 @@ defineProps<{
       </div>
       <div class="basic-info__card">
         <span class="basic-info__label">必修 / 選修：</span>
-        <span class="basic-info__value">{{ course.type ?? '—' }}</span>
+        <span class="basic-info__value">{{ localizedType }}</span>
       </div>
     </div>
   </section>
