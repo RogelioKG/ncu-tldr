@@ -21,7 +21,7 @@ export const useCoursePairsStore = defineStore('coursePairs', () => {
       return
     isLoading.value = true
     try {
-      const data = await request<CoursePairsResponse>('/api/courses/pairs')
+      const data = await request<CoursePairsResponse>('/api/v1/courses/pairs')
       pairs.value = data.pairs
       fetched.value = true
     }

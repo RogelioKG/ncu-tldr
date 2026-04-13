@@ -23,17 +23,15 @@ const emit = defineEmits<{
 const pairsStore = useCoursePairsStore()
 const wishStore = useWishStore()
 
-// 使用 Zod 表單驗證
 const { form, errors, validateAll, touchField, getFieldError } = useFormValidation(
   wishFormSchema,
-  {
-    name: '',
-    teacher: '',
-  },
+  { name: '', teacher: '' },
 )
 
 const submissionState = ref<SubmissionState>('idle')
 const showErrorToast = ref(false)
+const showCourseDropdown = ref(false)
+const showTeacherDropdown = ref(false)
 const dialogRef = ref<HTMLElement | null>(null)
 const { activate, deactivate } = useFocusTrap(dialogRef)
 
@@ -46,58 +44,84 @@ onUnmounted(() => deactivate())
 
 const filteredCourseNames = computed(() => {
   const teacher = form.teacher.trim()
-  if (teacher) {
-    return pairsStore.getCourseNamesByTeacher(teacher).slice(0, 12)
+  const courseKeyword = form.name.trim().toLowerCase()
+  const exactTeacherMatch = teacher.length > 0 && pairsStore.pairs.some(p => p.teacher === teacher)
+  if (exactTeacherMatch) {
+    const courses = [...new Set(pairsStore.pairs.filter(p => p.teacher === teacher).map(p => p.courseName))]
+    if (!courseKeyword)
+      return courses.slice(0, 12)
+    return courses.filter(n => n.toLowerCase().includes(courseKeyword)).slice(0, 12)
   }
-  const keyword = form.name.trim().toLowerCase()
-  if (!keyword)
+  if (!courseKeyword)
     return pairsStore.getCourseNamesByTeacher('').slice(0, 12)
-  return pairsStore
-    .getCourseNamesByTeacher('')
-    .filter(n => n.toLowerCase().includes(keyword))
-    .slice(0, 12)
+  return pairsStore.getCourseNamesByTeacher('').filter(n => n.toLowerCase().includes(courseKeyword)).slice(0, 12)
 })
 
 const filteredTeachers = computed(() => {
   const name = form.name.trim()
-  if (name) {
-    return pairsStore.getTeachersByCourseName(name).slice(0, 12)
+  const teacherKeyword = form.teacher.trim().toLowerCase()
+  const exactCourseMatch = name.length > 0 && pairsStore.pairs.some(p => p.courseName === name)
+  if (exactCourseMatch) {
+    const teachers = [...new Set(pairsStore.pairs.filter(p => p.courseName === name).map(p => p.teacher))]
+    if (!teacherKeyword)
+      return teachers.slice(0, 12)
+    return teachers.filter(t => t.toLowerCase().includes(teacherKeyword)).slice(0, 12)
   }
-  const keyword = form.teacher.trim().toLowerCase()
-  if (!keyword)
+  if (!teacherKeyword)
     return pairsStore.getTeachersByCourseName('').slice(0, 12)
-  return pairsStore
-    .getTeachersByCourseName('')
-    .filter(t => t.toLowerCase().includes(keyword))
-    .slice(0, 12)
+  return pairsStore.getTeachersByCourseName('').filter(t => t.toLowerCase().includes(teacherKeyword)).slice(0, 12)
 })
 
-// 額外的業務邏輯驗證：課程與教師組合必須有效
 const canSubmit = computed(() => {
   const name = form.name.trim()
   const teacher = form.teacher.trim()
   return name.length > 0 && teacher.length > 0 && pairsStore.isValidPair(name, teacher)
 })
 
+function selectCourseName(name: string) {
+  form.name = name
+  showCourseDropdown.value = false
+  touchField('name')
+}
+
+function selectTeacher(teacher: string) {
+  form.teacher = teacher
+  showTeacherDropdown.value = false
+  touchField('teacher')
+}
+
+function onCourseNameBlur() {
+  touchField('name')
+  setTimeout(() => {
+    showCourseDropdown.value = false
+  }, 150)
+}
+
+function onTeacherBlur() {
+  touchField('teacher')
+  setTimeout(() => {
+    showTeacherDropdown.value = false
+  }, 150)
+}
+
 function handleOverlayClick(event: MouseEvent) {
-  if ((event.target as HTMLElement).classList.contains('wish-overlay')) {
+  if ((event.target as HTMLElement).classList.contains('wish-overlay'))
     emit('close')
-  }
 }
 
 async function handleSubmit() {
-  // 先驗證基本格式
   if (!validateAll())
     return
 
-  // 再驗證業務邏輯
-  if (!canSubmit.value)
-    return
+  const name = form.name.trim()
+  const teacher = form.teacher.trim()
 
-  const payload: WishFormPayload = {
-    name: form.name.trim(),
-    teacher: form.teacher.trim(),
+  if (!pairsStore.isValidPair(name, teacher)) {
+    errors._form = '此課程與教師的組合不存在，請重新選擇'
+    return
   }
+
+  const payload: WishFormPayload = { name, teacher }
   submissionState.value = 'submitting'
   try {
     await wishStore.createWish(payload)
@@ -165,50 +189,76 @@ async function handleSubmit() {
                 <label class="wish-toast__label" for="wish-course-name">
                   許願課程名稱
                 </label>
-                <input
-                  id="wish-course-name"
-                  v-model="form.name"
-                  type="text"
-                  list="wish-course-name-options"
-                  class="wish-toast__input"
-                  :class="{ 'wish-toast__input--error': getFieldError('name') }"
-                  placeholder="請輸入課程名稱"
-                  @blur="touchField('name')"
-                >
+                <div class="wish-toast__field-wrapper">
+                  <input
+                    id="wish-course-name"
+                    v-model="form.name"
+                    type="text"
+                    class="wish-toast__input"
+                    :class="{ 'wish-toast__input--error': getFieldError('name') }"
+                    placeholder="請輸入課程名稱"
+                    autocomplete="off"
+                    @focus="showCourseDropdown = true"
+                    @blur="onCourseNameBlur"
+                    @keydown.escape="showCourseDropdown = false"
+                  >
+                  <ul
+                    v-if="showCourseDropdown && filteredCourseNames.length > 0"
+                    class="wish-toast__dropdown"
+                    role="listbox"
+                    aria-label="課程名稱選項"
+                  >
+                    <li
+                      v-for="courseName in filteredCourseNames"
+                      :key="courseName"
+                      class="wish-toast__dropdown-option"
+                      role="option"
+                      @mousedown.prevent="selectCourseName(courseName)"
+                    >
+                      {{ courseName }}
+                    </li>
+                  </ul>
+                </div>
                 <p v-if="getFieldError('name')" class="wish-toast__field-error">
                   {{ getFieldError('name') }}
                 </p>
-                <datalist id="wish-course-name-options">
-                  <option
-                    v-for="courseName in filteredCourseNames"
-                    :key="courseName"
-                    :value="courseName"
-                  />
-                </datalist>
 
                 <label class="wish-toast__label" for="wish-course-teacher">
                   授課教師
                 </label>
-                <input
-                  id="wish-course-teacher"
-                  v-model="form.teacher"
-                  type="text"
-                  list="wish-course-teacher-options"
-                  class="wish-toast__input"
-                  :class="{ 'wish-toast__input--error': getFieldError('teacher') }"
-                  placeholder="請輸入教師姓名"
-                  @blur="touchField('teacher')"
-                >
+                <div class="wish-toast__field-wrapper">
+                  <input
+                    id="wish-course-teacher"
+                    v-model="form.teacher"
+                    type="text"
+                    class="wish-toast__input"
+                    :class="{ 'wish-toast__input--error': getFieldError('teacher') }"
+                    placeholder="請輸入教師姓名"
+                    autocomplete="off"
+                    @focus="showTeacherDropdown = true"
+                    @blur="onTeacherBlur"
+                    @keydown.escape="showTeacherDropdown = false"
+                  >
+                  <ul
+                    v-if="showTeacherDropdown && filteredTeachers.length > 0"
+                    class="wish-toast__dropdown"
+                    role="listbox"
+                    aria-label="教師名稱選項"
+                  >
+                    <li
+                      v-for="teacher in filteredTeachers"
+                      :key="teacher"
+                      class="wish-toast__dropdown-option"
+                      role="option"
+                      @mousedown.prevent="selectTeacher(teacher)"
+                    >
+                      {{ teacher }}
+                    </li>
+                  </ul>
+                </div>
                 <p v-if="getFieldError('teacher')" class="wish-toast__field-error">
                   {{ getFieldError('teacher') }}
                 </p>
-                <datalist id="wish-course-teacher-options">
-                  <option
-                    v-for="teacher in filteredTeachers"
-                    :key="teacher"
-                    :value="teacher"
-                  />
-                </datalist>
 
                 <p v-if="errors._form" class="wish-toast__field-error">
                   {{ errors._form }}
@@ -304,6 +354,10 @@ async function handleSubmit() {
   color: var(--color-text-secondary);
 }
 
+.wish-toast__field-wrapper {
+  position: relative;
+}
+
 .wish-toast__input {
   width: 100%;
   padding: 10px 14px;
@@ -311,7 +365,6 @@ async function handleSubmit() {
   background: var(--color-background-alt);
   font-size: var(--font-size-sm);
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-sm);
   transition: box-shadow var(--transition-fast);
 }
 
@@ -328,8 +381,35 @@ async function handleSubmit() {
   box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.12);
 }
 
+.wish-toast__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  max-height: 200px;
+  overflow-y: auto;
+  padding: var(--spacing-xs) 0;
+  list-style: none;
+}
+
+.wish-toast__dropdown-option {
+  padding: 8px 14px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.wish-toast__dropdown-option:hover {
+  background: var(--color-background-alt);
+}
+
 .wish-toast__field-error {
-  margin: calc(var(--spacing-xs) * -1) 0 var(--spacing-sm);
+  margin-top: calc(var(--spacing-xs) * -1);
   font-size: var(--font-size-xs);
   color: var(--color-error, #c0392b);
 }
