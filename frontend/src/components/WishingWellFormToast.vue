@@ -474,6 +474,24 @@ async function handleSubmit() {
   margin-bottom: var(--spacing-md);
 }
 
+.wish-toast__result-btn {
+  margin-top: var(--spacing-md);
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-primary);
+  color: white;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.wish-toast__result-btn:hover {
+  background: var(--color-text-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
 .wish-fade-enter-active,
 .wish-fade-leave-active {
   transition: opacity 0.25s ease, transform 0.25s ease;
