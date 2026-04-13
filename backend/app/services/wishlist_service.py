@@ -1,50 +1,39 @@
+import uuid
+
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.user import User
-from app.models.wishlist import WishlistItem
 from app.repositories.wishlist_repo import wishlist_repo
-from app.schemas.wishlist import WishCourseOut, WishlistCreate
-
-
-def _wish_to_out(item: WishlistItem) -> WishCourseOut:
-    return WishCourseOut(
-        id=item.id,
-        name=item.course_name,
-        teacher=item.teacher_name,
-        vote_count=item.vote_count,
-    )
+from app.schemas.wishlist import WishCourseOut
 
 
 class WishlistService:
-    async def list_wishes(self, db: AsyncSession) -> list[WishCourseOut]:
-        items = await wishlist_repo.list_all(db)
-        return [_wish_to_out(i) for i in items]
+    async def list_wishes(
+        self, db: AsyncSession, *, user_id: uuid.UUID | None
+    ) -> list[WishCourseOut]:
+        return await wishlist_repo.list_courses_with_votes(db, user_id=user_id)
 
-    async def add_wish(
-        self,
-        db: AsyncSession,
-        data: WishlistCreate,
-        user: User | None,
-    ) -> WishCourseOut:
-        user_id = user.id if user is not None else None
-        item = await wishlist_repo.create_or_upvote(
-            db,
-            course_name=data.name,
-            teacher_name=data.teacher,
-            user_id=user_id,
-        )
-        return _wish_to_out(item)
-
-    async def delete_wish(
-        self,
-        db: AsyncSession,
-        wish_id: int,
-        user: User | None,
+    async def add_vote(
+        self, db: AsyncSession, *, course_id: int, user_id: uuid.UUID
     ) -> None:
-        deleted = await wishlist_repo.delete(db, wish_id)
-        if not deleted:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, "Wish not found")
+        if not await wishlist_repo.course_exists(db, course_id):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Course not found")
+        already_voted = not await wishlist_repo.add_vote(
+            db, course_id=course_id, user_id=user_id
+        )
+        if already_voted:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, "Already voted for this course"
+            )
+
+    async def remove_vote(
+        self, db: AsyncSession, *, course_id: int, user_id: uuid.UUID
+    ) -> None:
+        removed = await wishlist_repo.remove_vote(
+            db, course_id=course_id, user_id=user_id
+        )
+        if not removed:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Vote not found")
 
 
 wishlist_service = WishlistService()

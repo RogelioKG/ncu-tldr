@@ -14,7 +14,7 @@ from app.schemas.review import (
     RatingsOut as ReviewRatingsOut,
 )
 from app.schemas.comment import CommentCreate
-from app.schemas.wishlist import WishlistCreate, WishCourseOut
+from app.schemas.wishlist import WishCourseOut
 
 __all__ = [
     "LoginRequest",
