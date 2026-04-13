@@ -43,6 +43,7 @@ class CourseOut(BaseModel):
 
 
 class CoursePairOut(BaseModel):
+    course_id: int = Field(alias="courseId")
     course_name: str = Field(alias="courseName")
     teacher: str
     model_config = ConfigDict(populate_by_name=True)

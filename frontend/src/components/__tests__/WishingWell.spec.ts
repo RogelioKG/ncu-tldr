@@ -11,13 +11,8 @@ vi.mock('@/api/wishlist', async (importOriginal) => {
   const mod = await importOriginal() as typeof import('@/api/wishlist')
   return {
     ...mod,
-    getWishlist: vi.fn().mockResolvedValue(mockWishList.map(row => ({ ...row, voteCount: 1 }))),
-    addWish: vi.fn().mockResolvedValue({
-      id: 999,
-      name: '雲端原生應用',
-      teacher: '王小明',
-      voteCount: 1,
-    }),
+    getWishlist: vi.fn().mockResolvedValue(mockWishList),
+    voteForCourse: vi.fn().mockResolvedValue(undefined),
   }
 })
 
@@ -43,12 +38,12 @@ describe('wishingWell', () => {
     expect(items.length).toBeGreaterThan(0)
   })
 
-  it('renders course names and teachers', async () => {
+  it('renders course titles and vote counts', async () => {
     const wrapper = await mountWishingWell()
     const items = wrapper.findAll('.wishing-well__item')
     items.forEach((item) => {
       expect(item.find('.wishing-well__course-name').exists()).toBe(true)
-      expect(item.find('.wishing-well__teacher').exists()).toBe(true)
+      expect(item.find('.wishing-well__votes').exists()).toBe(true)
     })
   })
 
@@ -95,7 +90,7 @@ describe('wishingWell', () => {
     expect(wrapper.findComponent(WishingWellFormToast).exists()).toBe(true)
   })
 
-  it('adds a new wish item after toast form submit', async () => {
+  it('adds a new wish item after voting', async () => {
     const pinia = createPinia()
     const wrapper = mount(WishingWell, {
       global: {
@@ -108,19 +103,17 @@ describe('wishingWell', () => {
     }, { timeout: 2000 })
     const originalItemCount = wrapper.findAll('.wishing-well__item').length
 
-    await wrapper.get('.wishing-well__add-btn').trigger('click')
     setActivePinia(pinia)
     const wishStore = useWishStore()
-    await wishStore.createWish({
-      name: '雲端原生應用',
-      teacher: '王小明',
-    })
+    wishStore.wishes = [
+      ...wishStore.wishes,
+      { courseId: 999, title: '雲端原生應用', voteCount: 1, hasVoted: true },
+    ]
     await nextTick()
 
     const items = wrapper.findAll('.wishing-well__item')
     expect(items.length).toBe(originalItemCount + 1)
     expect(wrapper.text()).toContain('雲端原生應用')
-    expect(wrapper.text()).toContain('王小明')
   })
 
   it('renders background cards for stacking effect', async () => {

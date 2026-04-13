@@ -113,9 +113,14 @@ class CourseRepository:
 
     async def get_pairs(self, db: AsyncSession) -> list:
         result = await db.execute(
-            select(Course.title, Teacher.name)
+            select(
+                Course.title,
+                Teacher.name,
+                func.max(Course.id).label("course_id"),
+            )
             .join(CourseTeacher, CourseTeacher.course_id == Course.id)
             .join(Teacher, Teacher.id == CourseTeacher.teacher_id)
+            .group_by(Course.title, Teacher.name)
             .order_by(Course.title, Teacher.name)
         )
         return result.all()

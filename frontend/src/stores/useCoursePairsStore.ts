@@ -3,12 +3,17 @@ import { ref } from 'vue'
 import { request } from '@/api/client'
 
 interface CoursePair {
+  courseId: number
   courseName: string
   teacher: string
 }
 
 interface CoursePairsResponse {
-  pairs: CoursePair[]
+  pairs: Array<{
+    courseId: number
+    courseName: string
+    teacher: string
+  }>
 }
 
 export const useCoursePairsStore = defineStore('coursePairs', () => {
@@ -62,8 +67,15 @@ export const useCoursePairsStore = defineStore('coursePairs', () => {
     )
   }
 
+  function getCourseIdByPair(name: string, teacher: string): number | undefined {
+    return pairs.value.find(
+      p => p.courseName === name && p.teacher === teacher,
+    )?.courseId
+  }
+
   return {
     fetchPairs,
+    getCourseIdByPair,
     getCourseNamesByTeacher,
     getTeachersByCourseName,
     isLoading,

@@ -134,8 +134,10 @@ class CourseService:
         pairs = await course_repo.get_pairs(db)
         return CoursePairsResponse(
             pairs=[
-                CoursePairOut(course_name=title, teacher=teacher)
-                for title, teacher in pairs
+                CoursePairOut(
+                    course_name=row.title, teacher=row.name, course_id=row.course_id
+                )
+                for row in pairs
             ]
         )
 

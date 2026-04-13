@@ -8,16 +8,10 @@ import { wishFormSchema } from '@/schemas'
 import { useCoursePairsStore } from '@/stores/useCoursePairsStore'
 import { useWishStore } from '@/stores/useWishStore'
 
-interface WishFormPayload {
-  name: string
-  teacher: string
-}
-
 type SubmissionState = 'idle' | 'submitting' | 'success'
 
 const emit = defineEmits<{
   close: []
-  submit: [payload: WishFormPayload]
 }>()
 
 const pairsStore = useCoursePairsStore()
@@ -121,12 +115,16 @@ async function handleSubmit() {
     return
   }
 
-  const payload: WishFormPayload = { name, teacher }
+  const courseId = pairsStore.getCourseIdByPair(name, teacher)
+  if (courseId === undefined) {
+    errors._form = '找不到對應課程，請重新選擇'
+    return
+  }
+
   submissionState.value = 'submitting'
   try {
-    await wishStore.createWish(payload)
+    await wishStore.voteForCourseById(courseId)
     submissionState.value = 'success'
-    emit('submit', payload)
   }
   catch {
     submissionState.value = 'idle'

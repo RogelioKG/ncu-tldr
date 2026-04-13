@@ -1,7 +1,7 @@
 import type { WishCourse } from '@/types'
 import { defineStore, storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
-import { addWish, getWishlist, removeWish } from '@/api/wishlist'
+import { getWishlist, unvoteForCourse, voteForCourse } from '@/api/wishlist'
 import { useAuthStore } from './useAuthStore'
 
 export const useWishStore = defineStore('wish', () => {
@@ -9,7 +9,7 @@ export const useWishStore = defineStore('wish', () => {
   const isLoading = ref(false)
 
   const sortedWishes = computed(() =>
-    wishes.value.toSorted((a, b) => (b.voteCount ?? 0) - (a.voteCount ?? 0)),
+    wishes.value.toSorted((a, b) => b.voteCount - a.voteCount),
   )
 
   async function fetchWishlist(): Promise<void> {
@@ -22,29 +22,24 @@ export const useWishStore = defineStore('wish', () => {
     }
   }
 
-  async function createWish(payload: { name: string, teacher: string }): Promise<void> {
+  async function voteForCourseById(courseId: number): Promise<void> {
     const { token } = storeToRefs(useAuthStore())
-    const saved = await addWish(payload, token.value ?? undefined)
-    const target = wishes.value.find(row => row.id === saved.id)
-    if (!target) {
-      wishes.value = [...wishes.value, saved]
-      return
-    }
-    target.voteCount = saved.voteCount
+    await voteForCourse(courseId, token.value ?? '')
+    await fetchWishlist()
   }
 
-  async function deleteWish(wishId: number): Promise<void> {
+  async function unvoteForCourseById(courseId: number): Promise<void> {
     const { token } = storeToRefs(useAuthStore())
-    await removeWish(wishId, token.value ?? undefined)
-    wishes.value = wishes.value.filter(row => row.id !== wishId)
+    await unvoteForCourse(courseId, token.value ?? '')
+    wishes.value = wishes.value.filter(w => w.courseId !== courseId)
   }
 
   return {
-    createWish,
-    deleteWish,
     fetchWishlist,
     isLoading,
     sortedWishes,
+    unvoteForCourseById,
+    voteForCourseById,
     wishes,
   }
 })

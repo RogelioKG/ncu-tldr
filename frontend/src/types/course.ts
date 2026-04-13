@@ -106,14 +106,14 @@ export interface Course {
 }
 
 export interface WishCourse {
-  /** 課程唯一識別碼 */
-  id: number
+  /** 課程唯一識別碼 (courses.id) */
+  courseId: number
   /** 課程名稱 */
-  name: string
-  /** 授課教師 */
-  teacher: string
-  /** 許願人數 */
-  voteCount?: number
+  title: string
+  /** 票數（即有多少人投票） */
+  voteCount: number
+  /** 當前登入者是否已投票 */
+  hasVoted: boolean
 }
 
 /** 排序方向 */

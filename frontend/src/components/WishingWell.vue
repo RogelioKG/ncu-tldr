@@ -18,10 +18,6 @@ function handleSelectCourse(course: WishCourse) {
   emit('selectCourse', course)
 }
 
-function handleSubmitWish(_payload: { name: string, teacher: string }) {
-  /* Form handles createWish and shows success/failure; emit kept for optional parent side effects */
-}
-
 onMounted(async () => {
   await wishStore.fetchWishlist()
 })
@@ -46,19 +42,17 @@ onMounted(async () => {
         <ul class="wishing-well__list">
           <li
             v-for="(course, index) in wishStore.sortedWishes"
-            :key="course.id"
+            :key="course.courseId"
             class="wishing-well__item"
-            :class="{ 'wishing-well__item--hovered': hoveredItem === course.id }"
-            @mouseenter="hoveredItem = course.id"
+            :class="{ 'wishing-well__item--hovered': hoveredItem === course.courseId }"
+            @mouseenter="hoveredItem = course.courseId"
             @mouseleave="hoveredItem = null"
             @click="handleSelectCourse(course)"
           >
             <span class="wishing-well__number">{{ index + 1 }}.</span>
             <div class="wishing-well__course-info">
-              <span class="wishing-well__course-name">{{ course.name }}</span>
-              <span class="wishing-well__separator">-</span>
-              <span class="wishing-well__teacher">{{ course.teacher }}</span>
-              <span v-if="course.voteCount" class="wishing-well__votes">({{ course.voteCount }} 人)</span>
+              <span class="wishing-well__course-name">{{ course.title }}</span>
+              <span class="wishing-well__votes">({{ course.voteCount }} 人)</span>
             </div>
           </li>
         </ul>
@@ -84,7 +78,6 @@ onMounted(async () => {
     <WishingWellFormToast
       v-if="showWishForm"
       @close="showWishForm = false"
-      @submit="handleSubmitWish"
     />
   </aside>
 </template>
@@ -196,16 +189,6 @@ onMounted(async () => {
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-primary);
-}
-
-.wishing-well__separator {
-  color: var(--color-text-muted);
-}
-
-.wishing-well__teacher {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  font-weight: 400;
 }
 
 .wishing-well__votes {
