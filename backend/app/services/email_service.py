@@ -1,10 +1,15 @@
+import logging
+from typing import Any
+
 import boto3
 from botocore.exceptions import ClientError
 
 from app.config import get_settings
 
+logger = logging.getLogger(__name__)
 
-def _get_ses_client():
+
+def _get_ses_client() -> Any:
     settings = get_settings()
     return boto3.client(
         "ses",
@@ -37,5 +42,6 @@ def send_verification_email(to_email: str, token: str) -> bool:
             },
         )
         return True
-    except ClientError:
+    except ClientError as exc:
+        logger.error("SES send_email failed: %s", exc.response["Error"])
         return False
