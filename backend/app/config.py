@@ -22,6 +22,13 @@ class Settings(BaseSettings):
 
     database_url: str = Field(...)
 
+    # AWS SES
+    aws_access_key_id: str = Field(default="")
+    aws_secret_access_key: str = Field(default="")
+    aws_region: str = Field(default="ap-southeast-1")
+    email_from: str = Field(default="noreply@ncutldr.com")
+    verify_base_url: str = Field(default="https://ncutldr.com")
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
