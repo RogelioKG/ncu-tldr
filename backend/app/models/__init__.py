@@ -1,5 +1,6 @@
 from app.models.college import College
 from app.models.comment import Comment
+from app.models.email_verification_token import EmailVerificationToken
 from app.models.course import Course
 from app.models.course_college import CourseCollege
 from app.models.course_department import CourseDepartment
@@ -15,6 +16,7 @@ from app.models.wishlist import WishlistVote
 __all__ = [
     "College",
     "Comment",
+    "EmailVerificationToken",
     "Course",
     "CourseCollege",
     "CourseDepartment",
