@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from httpx import AsyncClient
 
@@ -45,16 +47,28 @@ async def test_list_reviews_invalid_course_returns_empty(client: AsyncClient) ->
 @pytest.mark.asyncio
 async def test_create_review_authenticated(client: AsyncClient) -> None:
     """Authenticated users can attempt to create reviews (auth is accepted)."""
-    reg = await client.post(
-        "/api/v1/auth/register",
-        json={
-            "email": "reviewer2@example.com",
-            "password": "pass123",
-            "displayName": "Review Author",
-        },
+    captured: dict = {}
+
+    def capture(email, token):
+        captured["token"] = token
+        return True
+
+    with patch(
+        "app.services.auth_service.send_verification_email", side_effect=capture
+    ):
+        await client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "100000099@cc.ncu.edu.tw",
+                "password": "pass123",
+                "displayName": "Review Author",
+            },
+        )
+
+    verify_resp = await client.get(
+        "/api/v1/auth/verify-email", params={"token": captured["token"]}
     )
-    assert reg.status_code == 201
-    token = reg.json()["accessToken"]
+    token = verify_resp.json()["accessToken"]
 
     resp = await client.post(
         "/api/v1/courses/99999/reviews",
