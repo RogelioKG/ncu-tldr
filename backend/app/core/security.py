@@ -1,14 +1,14 @@
-import os
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
 from jose import jwt
 
-_SECRET_KEY: str = os.environ.get(
-    "JWT_SECRET_KEY", "insecure-dev-secret-change-in-prod"
-)
+from app.config import get_settings
+
+_settings = get_settings()
+_SECRET_KEY: str = _settings.jwt_secret_key
 _ALGORITHM = "HS256"
-_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+_ACCESS_TOKEN_EXPIRE_MINUTES = _settings.access_token_expire_minutes
 
 
 def hash_password(plain: str) -> str:

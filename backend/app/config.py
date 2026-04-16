@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     )
 
     x_sync_secret_key: str = Field(default="change-me-in-production")
+    jwt_secret_key: str = Field(default="insecure-dev-secret-change-in-prod")
+    access_token_expire_minutes: int = Field(default=60)
 
     database_url: str = Field(...)
 
