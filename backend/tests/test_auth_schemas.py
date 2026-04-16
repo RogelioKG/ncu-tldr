@@ -31,3 +31,11 @@ def test_invalid_wrong_domain():
             email="109999001@ncu.edu.tw", password="x", **{"displayName": "T"}
         )
     assert "NCU" in str(exc.value)
+
+
+def test_uppercase_domain_rejected():
+    """Regex is case-sensitive — uppercase domain does not match."""
+    with pytest.raises(ValidationError):
+        RegisterRequest(
+            email="109999001@CC.NCU.EDU.TW", password="x", **{"displayName": "T"}
+        )

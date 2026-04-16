@@ -1,4 +1,10 @@
-from app.schemas.auth import LoginRequest, RegisterRequest, UserOut, TokenResponse
+from app.schemas.auth import (
+    LoginRequest,
+    MessageResponse,
+    RegisterRequest,
+    TokenResponse,
+    UserOut,
+)
 from app.schemas.course import (
     CourseOut,
     CoursePairOut,
@@ -18,6 +24,7 @@ from app.schemas.wishlist import WishCourseOut
 
 __all__ = [
     "LoginRequest",
+    "MessageResponse",
     "RegisterRequest",
     "UserOut",
     "TokenResponse",
@@ -32,6 +39,5 @@ __all__ = [
     "RatingsIn",
     "ReviewRatingsOut",
     "CommentCreate",
-    "WishlistCreate",
     "WishCourseOut",
 ]
