@@ -50,6 +50,7 @@ class AuthService:
 
         sent = send_verification_email(req.email, token_str)
         if not sent:
+            await db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="無法寄送驗證信，請稍後再試",
@@ -71,13 +72,13 @@ class AuthService:
                 status_code=status.HTTP_400_BAD_REQUEST, detail="驗證連結已過期"
             )
 
-        await email_verification_token_repo.mark_used(db, record)
-
         user = await user_repo.get_by_id(db, record.user_id)
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="使用者不存在"
             )
+
+        await email_verification_token_repo.mark_used(db, record)
 
         if not user.email_verified:
             user.email_verified = True
