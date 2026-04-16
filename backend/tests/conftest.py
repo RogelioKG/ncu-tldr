@@ -37,6 +37,17 @@ async def engine():
 
 
 @pytest_asyncio.fixture
+async def db(engine):
+    """Raw AsyncSession for repository-level tests — always rolls back after each test."""
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    async with session_factory() as session:
+        yield session
+        await session.rollback()
+
+
+@pytest_asyncio.fixture
 async def client(engine) -> AsyncClient:
     """Each test gets fresh DB sessions (one per request) with auto-commit on success."""
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
