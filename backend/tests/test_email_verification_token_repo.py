@@ -1,14 +1,14 @@
 import uuid
 from datetime import datetime, timezone
 
-import pytest
+import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.user import User
 from app.repositories.email_verification_token_repo import email_verification_token_repo
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_user(db: AsyncSession) -> User:
     from app.core.security import hash_password
 

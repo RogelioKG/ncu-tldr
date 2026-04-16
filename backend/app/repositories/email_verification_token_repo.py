@@ -22,6 +22,7 @@ class EmailVerificationTokenRepository:
         )
         db.add(record)
         await db.flush()
+        await db.refresh(record)
         return record
 
     async def get_by_token(
