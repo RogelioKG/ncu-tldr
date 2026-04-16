@@ -43,7 +43,6 @@ def upgrade() -> None:
         sa.Column("used_at", sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("token"),
     )
     op.create_index(
         "idx_evt_token", "email_verification_tokens", ["token"], unique=True
