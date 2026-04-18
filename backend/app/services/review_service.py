@@ -25,8 +25,17 @@ def _build_ratings(review: Review) -> RatingsOut | None:
     )
 
 
-def _review_to_out(review: Review) -> CourseCommentOut:
+def _review_to_out(
+    review: Review,
+    current_user_id: str | None = None,
+) -> CourseCommentOut:
     user_name = review.user.display_name if review.user else "Unknown"
+    can_delete = (
+        not review.is_deleted
+        and current_user_id is not None
+        and review.user_id is not None
+        and str(review.user_id) == current_user_id
+    )
     return CourseCommentOut(
         id=review.id,
         user=user_name,
@@ -36,6 +45,8 @@ def _review_to_out(review: Review) -> CourseCommentOut:
         likes=review.likes,
         dislikes=review.dislikes,
         parent_id=None,
+        is_deleted=review.is_deleted,
+        can_delete=can_delete,
         ratings=_build_ratings(review),
         semester=review.semester,
         weekly_hours=review.weekly_hours,
@@ -45,10 +56,14 @@ def _review_to_out(review: Review) -> CourseCommentOut:
 
 class ReviewService:
     async def list_reviews(
-        self, db: AsyncSession, course_id: int
+        self,
+        db: AsyncSession,
+        course_id: int,
+        current_user: User | None,
     ) -> list[CourseCommentOut]:
         reviews = await review_repo.list_by_course(db, course_id)
-        return [_review_to_out(r) for r in reviews]
+        current_user_id = str(current_user.id) if current_user else None
+        return [_review_to_out(r, current_user_id) for r in reviews]
 
     async def create_review(
         self,
@@ -78,7 +93,7 @@ class ReviewService:
             weekly_hours=data.weekly_hours,
             textbook=data.textbook,
         )
-        return _review_to_out(review)
+        return _review_to_out(review, str(user.id))
 
     async def list_my_reviews(self, db: AsyncSession, user: User) -> list[MyReviewOut]:
         rows = await review_repo.list_by_user(db, user.id)
@@ -92,6 +107,8 @@ class ReviewService:
                 likes=review.likes,
                 dislikes=review.dislikes,
                 parent_id=None,
+                is_deleted=review.is_deleted,
+                can_delete=not review.is_deleted,
                 ratings=_build_ratings(review),
                 semester=review.semester,
                 weekly_hours=review.weekly_hours,
@@ -115,6 +132,26 @@ class ReviewService:
                 detail=f"Review {review_id} not found",
             )
         return ReactionResponse(likes=review.likes, dislikes=review.dislikes)
+
+    async def soft_delete_review(
+        self,
+        db: AsyncSession,
+        *,
+        course_id: int,
+        review_id: int,
+        user: User,
+    ) -> None:
+        deleted = await review_repo.soft_delete(
+            db,
+            review_id=review_id,
+            course_id=course_id,
+            user_id=user.id,
+        )
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Review {review_id} not found",
+            )
 
 
 review_service = ReviewService()

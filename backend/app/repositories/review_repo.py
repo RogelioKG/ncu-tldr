@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +13,7 @@ class ReviewRepository:
     async def list_by_course(self, db: AsyncSession, course_id: int) -> list[Review]:
         result = await db.execute(
             select(Review)
-            .where(Review.course_id == course_id)
+            .where(Review.course_id == course_id, Review.is_deleted.is_(False))
             .options(selectinload(Review.user))
             .order_by(Review.created_at.desc())
         )
@@ -58,7 +59,7 @@ class ReviewRepository:
         result = await db.execute(
             select(Review, Course.title)
             .join(Course, Review.course_id == Course.id)
-            .where(Review.user_id == user_id)
+            .where(Review.user_id == user_id, Review.is_deleted.is_(False))
             .options(selectinload(Review.user))
             .order_by(Review.created_at.desc())
         )
@@ -67,7 +68,9 @@ class ReviewRepository:
     async def react(
         self, db: AsyncSession, review_id: int, reaction: str
     ) -> Review | None:
-        result = await db.execute(select(Review).where(Review.id == review_id))
+        result = await db.execute(
+            select(Review).where(Review.id == review_id, Review.is_deleted.is_(False))
+        )
         review = result.scalar_one_or_none()
         if review is None:
             return None
@@ -77,6 +80,32 @@ class ReviewRepository:
             review.dislikes += 1
         await db.flush()
         return review
+
+    async def soft_delete(
+        self,
+        db: AsyncSession,
+        *,
+        review_id: int,
+        course_id: int,
+        user_id: uuid.UUID,
+    ) -> bool:
+        result = await db.execute(
+            select(Review).where(
+                Review.id == review_id,
+                Review.course_id == course_id,
+                Review.user_id == user_id,
+                Review.is_deleted.is_(False),
+            )
+        )
+        review = result.scalar_one_or_none()
+        if review is None:
+            return False
+
+        review.is_deleted = True
+        review.deleted_at = datetime.now(UTC)
+        review.deleted_by_user_id = user_id
+        await db.flush()
+        return True
 
 
 review_repo = ReviewRepository()

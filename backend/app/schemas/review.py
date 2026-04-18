@@ -36,6 +36,8 @@ class CourseCommentOut(BaseModel):
     likes: int
     dislikes: int
     parent_id: int | None = Field(alias="parentId", default=None)
+    is_deleted: bool = Field(alias="isDeleted", default=False)
+    can_delete: bool = Field(alias="canDelete", default=False)
     ratings: RatingsOut | None = None
     semester: str | None = None
     weekly_hours: int | None = Field(alias="weeklyHours", default=None)
