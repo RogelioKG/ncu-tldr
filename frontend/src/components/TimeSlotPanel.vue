@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { TimeSlot } from '@/types'
 import { useFocusTrap } from '@vueuse/integrations/useFocusTrap'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 
-defineProps<{ visible: boolean }>()
+const props = defineProps<{ visible: boolean, activeSlots?: TimeSlot[] }>()
 const emit = defineEmits<{
   close: []
   submit: [slots: TimeSlot[]]
@@ -24,34 +24,32 @@ const PERIODS = [
   { label: '2', value: '2' },
   { label: '3', value: '3' },
   { label: '4', value: '4' },
+  { label: 'Z', value: 'Z' },
   { label: '5', value: '5' },
   { label: '6', value: '6' },
   { label: '7', value: '7' },
   { label: '8', value: '8' },
   { label: '9', value: '9' },
-  { label: '10', value: '10' },
   { label: 'A', value: 'A' },
   { label: 'B', value: 'B' },
   { label: 'C', value: 'C' },
-  { label: 'D', value: 'D' },
 ]
 
 const TIME_LABELS: Record<string, string> = {
-  0: '07:10~08:00',
-  1: '08:10~09:00',
-  2: '09:10~10:00',
-  3: '10:20~11:10',
-  4: '11:20~12:10',
-  5: '12:20~13:10',
-  6: '13:20~14:10',
-  7: '14:20~15:10',
-  8: '15:30~16:20',
-  9: '16:30~17:20',
-  10: '17:30~18:20',
-  A: '18:25~19:15',
-  B: '19:20~20:10',
-  C: '20:15~21:05',
-  D: '21:10~22:00',
+  0: '07:00~08:50',
+  1: '08:00~09:50',
+  2: '09:00~10:50',
+  3: '10:00~11:50',
+  4: '11:00~12:50',
+  Z: '12:00~13:50',
+  5: '13:00~14:50',
+  6: '14:00~15:50',
+  7: '15:00~16:50',
+  8: '16:00~17:50',
+  9: '17:00~18:50',
+  A: '18:00~19:50',
+  B: '19:00~20:50',
+  C: '20:00~20:50',
 }
 
 const dialogRef = ref<HTMLElement | null>(null)
@@ -67,6 +65,14 @@ const hasSelection = computed(() => localSelected.value.size > 0)
 function slotKey(day: number, period: string): string {
   return `${day}_${period}`
 }
+
+watch(
+  () => props.visible,
+  (v) => {
+    if (v)
+      localSelected.value = new Set(props.activeSlots?.map(s => slotKey(s.day, s.period)) ?? [])
+  },
+)
 
 function isSelected(day: number, period: string): boolean {
   return localSelected.value.has(slotKey(day, period))

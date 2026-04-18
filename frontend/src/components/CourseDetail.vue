@@ -107,6 +107,7 @@ function handleSubmitReview(payload: {
         </div>
         <TimeSlotPanel
           :visible="showSlotPanel"
+          :active-slots="courseStore.selectedSlots"
           @close="showSlotPanel = false"
           @submit="handleSlotSubmit"
         />
