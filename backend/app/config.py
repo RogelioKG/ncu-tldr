@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = Field(default=60)
 
     database_url: str = Field(...)
+    sqlalchemy_echo: bool = Field(default=False)
 
     # AWS SES
     aws_access_key_id: str = Field(default="")
