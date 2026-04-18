@@ -11,6 +11,7 @@ const SCROLL_THRESHOLD_PX = 20
 
 const isScrolled = ref(false)
 const menuOpen = ref(false)
+const showLogoutConfirm = ref(false)
 const authStore = useAuthStore()
 const route = useRoute()
 
@@ -50,6 +51,11 @@ onUnmounted(() => {
 })
 
 function handleLogout() {
+  showLogoutConfirm.value = true
+}
+
+function confirmLogout() {
+  showLogoutConfirm.value = false
   authStore.logout()
 }
 
@@ -112,6 +118,45 @@ function closeMenu() {
       </div>
     </div>
     <Teleport to="body">
+      <Transition name="navbar-overlay">
+        <div
+          v-if="showLogoutConfirm"
+          class="navbar__overlay navbar__overlay--dialog"
+          @click="showLogoutConfirm = false"
+        />
+      </Transition>
+      <Transition name="navbar-dialog">
+        <div
+          v-if="showLogoutConfirm"
+          class="navbar__dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="logout-dialog-title"
+        >
+          <p id="logout-dialog-title" class="navbar__dialog-title">
+            確定要登出嗎？
+          </p>
+          <p class="navbar__dialog-desc">
+            登出後需重新登入才能使用會員功能。
+          </p>
+          <div class="navbar__dialog-actions">
+            <button
+              type="button"
+              class="navbar__dialog-btn navbar__dialog-btn--cancel"
+              @click="showLogoutConfirm = false"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              class="navbar__dialog-btn navbar__dialog-btn--confirm"
+              @click="confirmLogout"
+            >
+              確認登出
+            </button>
+          </div>
+        </div>
+      </Transition>
       <Transition name="navbar-overlay">
         <button
           v-if="menuOpen"
@@ -382,6 +427,91 @@ function closeMenu() {
 .navbar__drawer-link--active {
   color: var(--color-text-primary);
   background: rgba(255, 255, 255, 0.1);
+}
+
+/* logout confirmation dialog */
+.navbar__overlay--dialog {
+  cursor: default;
+  z-index: 1200;
+}
+
+.navbar__dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1201;
+  width: min(360px, 90vw);
+  padding: var(--spacing-xl);
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(127, 169, 184, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.navbar__dialog-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.navbar__dialog-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.navbar__dialog-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.navbar__dialog-btn {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  border: none;
+}
+
+.navbar__dialog-btn--cancel {
+  background: var(--color-background-alt);
+  color: var(--color-text-secondary);
+}
+
+.navbar__dialog-btn--cancel:hover {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.navbar__dialog-btn--confirm {
+  background: var(--color-accent-primary);
+  color: white;
+}
+
+.navbar__dialog-btn--confirm:hover {
+  background: var(--color-text-primary);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.navbar-dialog-enter-active,
+.navbar-dialog-leave-active {
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+}
+
+.navbar-dialog-enter-from,
+.navbar-dialog-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -48%);
 }
 
 /* overlay / drawer 進出場 */
