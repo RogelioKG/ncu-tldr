@@ -2,41 +2,41 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class RatingsIn(BaseModel):
-    gain: int  # 1-5
-    high_score: int = Field(alias="highScore")  # 1-5
-    easiness: int  # 1-5
-    teacher_style: int = Field(alias="teacherStyle")  # 1-5
+    gain: int | None = None
+    high_score: int | None = Field(alias="highScore", default=None)
+    easiness: int | None = None
+    teacher_style: int | None = Field(alias="teacherStyle", default=None)
     model_config = ConfigDict(populate_by_name=True)
 
 
 class ReviewCreate(BaseModel):
+    semester: str
     title: str = ""
-    content: str
-    ratings: RatingsIn
-    semester: str | None = None
+    content: str | None = None
+    ratings: RatingsIn | None = None
     weekly_hours: int | None = Field(alias="weeklyHours", default=None)
     textbook: str | None = None
     model_config = ConfigDict(populate_by_name=True)
 
 
 class RatingsOut(BaseModel):
-    gain: float
-    high_score: float = Field(alias="highScore")
-    easiness: float
-    teacher_style: float = Field(alias="teacherStyle")
+    gain: float | None = None
+    high_score: float | None = Field(alias="highScore", default=None)
+    easiness: float | None = None
+    teacher_style: float | None = Field(alias="teacherStyle", default=None)
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 class CourseCommentOut(BaseModel):
     id: int
-    user: str  # display_name of the user
+    user: str
     title: str
-    content: str
-    date: str  # ISO format date string
+    content: str | None
+    date: str
     likes: int
     dislikes: int
     parent_id: int | None = Field(alias="parentId", default=None)
-    ratings: RatingsOut | None = None  # Only present for reviews, not comments
+    ratings: RatingsOut | None = None
     semester: str | None = None
     weekly_hours: int | None = Field(alias="weeklyHours", default=None)
     textbook: str | None = None

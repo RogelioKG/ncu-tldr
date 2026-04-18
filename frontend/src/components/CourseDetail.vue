@@ -21,17 +21,17 @@ const emit = defineEmits<{
   reply: [{ parentId: number, content: string }]
   submitReview: [
     payload: {
+      semester: string
       title: string
-      content: string
+      content: string | null
       ratings: {
         gain: number
         highScore: number
         easiness: number
         teacherStyle: number
-      }
-      weeklyHours: string
-      textbook: string
-      semester: string
+      } | null
+      weeklyHours: number | null
+      textbook: string | null
     },
   ]
 }>()
@@ -63,17 +63,17 @@ function handleReply(payload: { parentId: number, content: string }) {
 }
 
 function handleSubmitReview(payload: {
+  semester: string
   title: string
-  content: string
+  content: string | null
   ratings: {
     gain: number
     highScore: number
     easiness: number
     teacherStyle: number
-  }
-  weeklyHours: string
-  textbook: string
-  semester: string
+  } | null
+  weeklyHours: number | null
+  textbook: string | null
 }) {
   emit('submitReview', payload)
 }

@@ -9,23 +9,34 @@ from app.schemas.reaction import ReactionResponse
 from app.schemas.review import CourseCommentOut, MyReviewOut, RatingsOut, ReviewCreate
 
 
+def _build_ratings(review: Review) -> RatingsOut | None:
+    if not any(
+        v is not None
+        for v in [review.gain, review.high_score, review.easiness, review.teacher_style]
+    ):
+        return None
+    return RatingsOut(
+        gain=float(review.gain) if review.gain is not None else None,
+        high_score=float(review.high_score) if review.high_score is not None else None,
+        easiness=float(review.easiness) if review.easiness is not None else None,
+        teacher_style=float(review.teacher_style)
+        if review.teacher_style is not None
+        else None,
+    )
+
+
 def _review_to_out(review: Review) -> CourseCommentOut:
     user_name = review.user.display_name if review.user else "Unknown"
     return CourseCommentOut(
         id=review.id,
         user=user_name,
-        title=review.title or "",
+        title=review.title,
         content=review.content,
         date=review.created_at.isoformat(),
         likes=review.likes,
         dislikes=review.dislikes,
         parent_id=None,
-        ratings=RatingsOut(
-            gain=float(review.gain),
-            high_score=float(review.high_score),
-            easiness=float(review.easiness),
-            teacher_style=float(review.teacher_style),
-        ),
+        ratings=_build_ratings(review),
         semester=review.semester,
         weekly_hours=review.weekly_hours,
         textbook=review.textbook,
@@ -52,17 +63,18 @@ class ReviewService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Course {course_id} not found",
             )
+        ratings = data.ratings
         review = await review_repo.create(
             db,
             course_id=course_id,
             user_id=user.id,
-            title=data.title,
-            content=data.content,
-            gain=data.ratings.gain,
-            high_score=data.ratings.high_score,
-            easiness=data.ratings.easiness,
-            teacher_style=data.ratings.teacher_style,
             semester=data.semester,
+            title=data.title or f"[{data.semester}]",
+            content=data.content,
+            gain=ratings.gain if ratings else None,
+            high_score=ratings.high_score if ratings else None,
+            easiness=ratings.easiness if ratings else None,
+            teacher_style=ratings.teacher_style if ratings else None,
             weekly_hours=data.weekly_hours,
             textbook=data.textbook,
         )
@@ -74,18 +86,13 @@ class ReviewService:
             MyReviewOut(
                 id=review.id,
                 user=review.user.display_name if review.user else "Unknown",
-                title=review.title or "",
+                title=review.title,
                 content=review.content,
                 date=review.created_at.isoformat(),
                 likes=review.likes,
                 dislikes=review.dislikes,
                 parent_id=None,
-                ratings=RatingsOut(
-                    gain=float(review.gain),
-                    high_score=float(review.high_score),
-                    easiness=float(review.easiness),
-                    teacher_style=float(review.teacher_style),
-                ),
+                ratings=_build_ratings(review),
                 semester=review.semester,
                 weekly_hours=review.weekly_hours,
                 textbook=review.textbook,

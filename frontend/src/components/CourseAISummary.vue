@@ -12,17 +12,17 @@ defineProps<{
 const emit = defineEmits<{
   submitReview: [
     payload: {
+      semester: string
       title: string
-      content: string
+      content: string | null
       ratings: {
         gain: number
         highScore: number
         easiness: number
         teacherStyle: number
-      }
-      weeklyHours: string
-      textbook: string
-      semester: string
+      } | null
+      weeklyHours: number | null
+      textbook: string | null
     },
   ]
 }>()
@@ -30,17 +30,17 @@ const emit = defineEmits<{
 const showReviewForm = ref(false)
 
 function handleSubmitReview(payload: {
+  semester: string
   title: string
-  content: string
+  content: string | null
   ratings: {
     gain: number
     highScore: number
     easiness: number
     teacherStyle: number
-  }
-  weeklyHours: string
-  textbook: string
-  semester: string
+  } | null
+  weeklyHours: number | null
+  textbook: string | null
 }) {
   emit('submitReview', payload)
 }

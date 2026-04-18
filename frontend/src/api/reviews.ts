@@ -5,17 +5,20 @@ interface RawReview {
   id: number
   user: string
   title: string
-  content: string
+  content: string | null
   date: string
   likes: number
   dislikes: number
   parentId: number | null
   ratings: {
-    gain: number
-    highScore: number
-    easiness: number
-    teacherStyle: number
+    gain: number | null
+    highScore: number | null
+    easiness: number | null
+    teacherStyle: number | null
   } | null
+  semester: string | null
+  weeklyHours: number | null
+  textbook: string | null
 }
 
 function normalizeReview(raw: RawReview): CourseComment {
@@ -23,7 +26,7 @@ function normalizeReview(raw: RawReview): CourseComment {
     id: raw.id,
     user: raw.user,
     title: raw.title,
-    content: raw.content,
+    content: raw.content ?? '',
     date: raw.date,
     likes: raw.likes,
     dislikes: raw.dislikes,
@@ -33,9 +36,12 @@ function normalizeReview(raw: RawReview): CourseComment {
 }
 
 export interface SubmitReviewInput {
+  semester: string
   title: string
-  content: string
-  ratings: CourseRatings
+  content: string | null
+  ratings: CourseRatings | null
+  weeklyHours: number | null
+  textbook: string | null
 }
 
 export async function getReviews(courseId: number): Promise<CourseComment[]> {
@@ -51,9 +57,12 @@ export async function createReview(
   const raw = await request<RawReview>(`/api/v1/courses/${courseId}/reviews`, {
     method: 'POST',
     body: JSON.stringify({
+      semester: payload.semester,
       title: payload.title,
       content: payload.content,
       ratings: payload.ratings,
+      weeklyHours: payload.weeklyHours,
+      textbook: payload.textbook,
     }),
     token,
   })

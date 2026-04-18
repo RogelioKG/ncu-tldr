@@ -38,32 +38,40 @@ async function handleReply(payload: { parentId: number, content: string }) {
 }
 
 async function handleSubmitReview(payload: {
+  semester: string
   title: string
-  content: string
+  content: string | null
   ratings: {
     gain: number
     highScore: number
     easiness: number
     teacherStyle: number
-  }
+  } | null
+  weeklyHours: number | null
+  textbook: string | null
 }) {
   if (!courseStore.selectedCourse)
     return
   const selected = courseStore.selectedCourse
-  const reviewCount = selected.summary?.reviewCount ?? 0
-  const nextCount = reviewCount + 1
-  const nextRatings = {
-    gain: Number(((((selected.ratings?.gain ?? 0) * reviewCount) + payload.ratings.gain) / nextCount).toFixed(2)),
-    highScore: Number(((((selected.ratings?.highScore ?? 0) * reviewCount) + payload.ratings.highScore) / nextCount).toFixed(2)),
-    easiness: Number(((((selected.ratings?.easiness ?? 0) * reviewCount) + payload.ratings.easiness) / nextCount).toFixed(2)),
-    teacherStyle: Number(((((selected.ratings?.teacherStyle ?? 0) * reviewCount) + payload.ratings.teacherStyle) / nextCount).toFixed(2)),
+  if (payload.ratings) {
+    const reviewCount = selected.summary?.reviewCount ?? 0
+    const nextCount = reviewCount + 1
+    const nextRatings = {
+      gain: Number(((((selected.ratings?.gain ?? 0) * reviewCount) + payload.ratings.gain) / nextCount).toFixed(2)),
+      highScore: Number(((((selected.ratings?.highScore ?? 0) * reviewCount) + payload.ratings.highScore) / nextCount).toFixed(2)),
+      easiness: Number(((((selected.ratings?.easiness ?? 0) * reviewCount) + payload.ratings.easiness) / nextCount).toFixed(2)),
+      teacherStyle: Number(((((selected.ratings?.teacherStyle ?? 0) * reviewCount) + payload.ratings.teacherStyle) / nextCount).toFixed(2)),
+    }
+    courseStore.applyReviewRatings(courseId.value, nextRatings)
   }
   await reviewStore.submitReview(courseId.value, {
+    semester: payload.semester,
     title: payload.title,
     content: payload.content,
     ratings: payload.ratings,
+    weeklyHours: payload.weeklyHours,
+    textbook: payload.textbook,
   })
-  courseStore.applyReviewRatings(courseId.value, nextRatings)
 }
 
 watch(courseId, loadData)

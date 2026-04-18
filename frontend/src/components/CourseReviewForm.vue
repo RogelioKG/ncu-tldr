@@ -13,17 +13,17 @@ const emit = defineEmits<{
   close: []
   submit: [
     payload: {
+      semester: string
       title: string
-      content: string
+      content: string | null
       ratings: {
         gain: number
         highScore: number
         easiness: number
         teacherStyle: number
-      }
-      weeklyHours: string
-      textbook: string
-      semester: string
+      } | null
+      weeklyHours: number | null
+      textbook: string | null
     },
   ]
 }>()
@@ -85,30 +85,20 @@ function handleSliderInput() {
 }
 
 function handleSubmit() {
-  // 驗證表單
-  if (!validateAll()) {
+  if (!validateAll())
     return
-  }
 
-  const normalizedComment = form.comment?.trim() || ''
-  const generatedContent = normalizedComment || [
-    `修課學期：${form.semester}`,
-    `每週投入：約 ${weeklyHoursLabel.value}`,
-    `教材：${form.textbook?.trim() || '未填寫'}`,
-  ].join('；')
+  const hasStars = form.gain > 0 || form.highScore > 0 || form.easiness > 0 || form.teacherStyle > 0
 
   emit('submit', {
-    title: `[${form.semester}] ${props.courseName}`,
-    content: generatedContent,
-    ratings: {
-      gain: form.gain,
-      highScore: form.highScore,
-      easiness: form.easiness,
-      teacherStyle: form.teacherStyle,
-    },
-    weeklyHours: weeklyHoursLabel.value,
-    textbook: form.textbook?.trim() || '',
     semester: form.semester,
+    title: `[${form.semester}] ${props.courseName}`,
+    content: form.comment?.trim() || null,
+    ratings: hasStars
+      ? { gain: form.gain, highScore: form.highScore, easiness: form.easiness, teacherStyle: form.teacherStyle }
+      : null,
+    weeklyHours: weeklyHoursTouched.value ? form.weeklyHours : null,
+    textbook: form.textbook?.trim() || null,
   })
   submitted.value = true
 }
