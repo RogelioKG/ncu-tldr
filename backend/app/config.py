@@ -20,8 +20,11 @@ class Settings(BaseSettings):
 
     x_sync_secret_key: str = Field(..., min_length=1)
     jwt_secret_key: str = Field(..., min_length=1)
-    access_token_expire_minutes: int = Field(default=60 * 3)
-    remember_me_expire_minutes: int = Field(default=60 * 24 * 3)  # 3 days
+    access_token_expire_minutes: int = Field(default=15)
+    refresh_token_expire_days: int = Field(default=1)
+    refresh_token_remember_me_expire_days: int = Field(default=30)
+    cookie_secure: bool = Field(default=True)
+    cookie_samesite: str = Field(default="lax")
 
     database_url: str = Field(..., min_length=1)
     sqlalchemy_echo: bool = Field(default=False)
