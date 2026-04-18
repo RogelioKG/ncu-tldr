@@ -1,8 +1,10 @@
 import uuid
 from datetime import datetime
+from typing import Optional
 
 import sqlalchemy as sa
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -24,8 +26,8 @@ class Review(Base):
     course_id: Mapped[int] = mapped_column(
         ForeignKey("courses.id", ondelete="CASCADE"), nullable=False
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     semester: Mapped[str] = mapped_column(Text, nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
@@ -42,11 +44,22 @@ class Review(Base):
     )
     weekly_hours: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     textbook: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=sa.text("false")
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    user: Mapped["User"] = relationship("User", lazy="select")  # type: ignore[name-defined]  # noqa: F821
+    user: Mapped[Optional["User"]] = relationship(  # type: ignore[name-defined]  # noqa: F821
+        "User",
+        lazy="select",
+        foreign_keys=[user_id],
+    )
 
     __table_args__ = (
         CheckConstraint("gain IS NULL OR gain BETWEEN 1 AND 5", name="ck_reviews_gain"),
@@ -64,4 +77,5 @@ class Review(Base):
         ),
         Index("idx_reviews_course_id", "course_id"),
         Index("idx_reviews_user_id", "user_id"),
+        Index("idx_reviews_course_id_is_deleted", "course_id", "is_deleted"),
     )
