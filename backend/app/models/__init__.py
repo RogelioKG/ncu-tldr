@@ -8,6 +8,7 @@ from app.models.course_teacher import CourseTeacher
 from app.models.course_time import CourseTime
 from app.models.department import Department
 from app.models.metadata import Metadata
+from app.models.refresh_token import RefreshToken
 from app.models.review import Review
 from app.models.teacher import Teacher
 from app.models.user import User
@@ -24,6 +25,7 @@ __all__ = [
     "CourseTime",
     "Department",
     "Metadata",
+    "RefreshToken",
     "Review",
     "Teacher",
     "User",
