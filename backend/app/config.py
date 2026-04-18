@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=(".env", "../.env"),
         env_file_encoding="utf-8",
         extra="allow",
         case_sensitive=False,
@@ -18,11 +18,11 @@ class Settings(BaseSettings):
         default=["http://localhost:5173", "http://127.0.0.1:5173"],
     )
 
-    x_sync_secret_key: str = Field(default="change-me-in-production")
-    jwt_secret_key: str = Field(default="insecure-dev-secret-change-in-prod")
+    x_sync_secret_key: str = Field(..., min_length=1)
+    jwt_secret_key: str = Field(..., min_length=1)
     access_token_expire_minutes: int = Field(default=60)
 
-    database_url: str = Field(...)
+    database_url: str = Field(..., min_length=1)
     sqlalchemy_echo: bool = Field(default=False)
 
     # AWS SES
