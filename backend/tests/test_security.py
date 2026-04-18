@@ -1,4 +1,5 @@
 import hashlib
+import re
 
 from app.core.security import generate_refresh_token_str, hash_token
 
@@ -6,7 +7,7 @@ from app.core.security import generate_refresh_token_str, hash_token
 def test_generate_refresh_token_str_is_urlsafe_64_chars() -> None:
     token = generate_refresh_token_str()
     assert len(token) == 64
-    assert token.isascii()
+    assert re.match(r"^[A-Za-z0-9_\-]+$", token)
 
 
 def test_generate_refresh_token_str_is_unique() -> None:

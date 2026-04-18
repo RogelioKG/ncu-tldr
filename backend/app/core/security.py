@@ -36,7 +36,7 @@ def decode_access_token(token: str) -> str:
 
 def generate_refresh_token_str() -> str:
     """Return a 64-char URL-safe random token (raw, not hashed)."""
-    return secrets.token_urlsafe(48)[:64]
+    return secrets.token_urlsafe(48)
 
 
 def hash_token(raw: str) -> str:
