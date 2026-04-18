@@ -17,10 +17,10 @@ const emit = defineEmits<{
       title: string
       content: string | null
       ratings: {
-        gain: number
-        highScore: number
-        easiness: number
-        teacherStyle: number
+        gain: number | null
+        highScore: number | null
+        easiness: number | null
+        teacherStyle: number | null
       } | null
       weeklyHours: number | null
       textbook: string | null
@@ -95,7 +95,12 @@ function handleSubmit() {
     title: `[${form.semester}] ${props.courseName}`,
     content: form.comment?.trim() || null,
     ratings: hasStars
-      ? { gain: form.gain, highScore: form.highScore, easiness: form.easiness, teacherStyle: form.teacherStyle }
+      ? {
+          gain: form.gain || null,
+          highScore: form.highScore || null,
+          easiness: form.easiness || null,
+          teacherStyle: form.teacherStyle || null,
+        }
       : null,
     weeklyHours: weeklyHoursTouched.value ? form.weeklyHours : null,
     textbook: form.textbook?.trim() || null,
