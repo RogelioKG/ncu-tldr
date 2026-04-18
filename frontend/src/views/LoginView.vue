@@ -16,7 +16,7 @@ const errorToastTitle = ref('')
 const errorToastMessage = ref('')
 const showUnverified = ref(false)
 const unverifiedEmail = ref('')
-const countdown = ref(30)
+const countdown = ref(1)
 const isResending = ref(false)
 const resentSuccess = ref(false)
 let countdownTimer: ReturnType<typeof setInterval> | null = null
@@ -129,25 +129,48 @@ async function handleResend() {
   <div class="auth-page">
     <div class="auth-card">
       <template v-if="showUnverified">
-        <div class="unverified-panel">
-          <div class="unverified-panel__icon">
-            📬
+        <template v-if="resentSuccess">
+          <div class="unverified-panel">
+            <div class="unverified-panel__icon">
+              ✅
+            </div>
+            <h1 class="auth-card__heading">
+              驗證信已重新寄出！
+            </h1>
+            <p class="unverified-panel__desc">
+              驗證信已重新寄送到
+              <strong>{{ unverifiedEmail }}</strong>，請查收信件並點擊連結完成驗證。
+            </p>
+            <button
+              class="auth-form__submit unverified-panel__btn"
+              :disabled="countdown > 0 || isResending"
+              @click="handleResend"
+            >
+              {{ resendButtonLabel }}
+            </button>
           </div>
-          <h1 class="auth-card__heading">
-            信箱還沒驗證哦！
-          </h1>
-          <p class="unverified-panel__desc">
-            {{ resentSuccess ? '驗證信已重新寄送到' : '驗證信已寄送到' }}
-            <strong>{{ unverifiedEmail }}</strong>，請查收信件並點擊連結完成驗證。
-          </p>
-          <button
-            class="auth-form__submit unverified-panel__btn"
-            :disabled="countdown > 0 || isResending"
-            @click="handleResend"
-          >
-            {{ resendButtonLabel }}
-          </button>
-        </div>
+        </template>
+        <template v-else>
+          <div class="unverified-panel">
+            <div class="unverified-panel__icon">
+              📬
+            </div>
+            <h1 class="auth-card__heading">
+              信箱還沒驗證哦！
+            </h1>
+            <p class="unverified-panel__desc">
+              驗證信已寄送到
+              <strong>{{ unverifiedEmail }}</strong>，請查收信件並點擊連結完成驗證。
+            </p>
+            <button
+              class="auth-form__submit unverified-panel__btn"
+              :disabled="countdown > 0 || isResending"
+              @click="handleResend"
+            >
+              {{ resendButtonLabel }}
+            </button>
+          </div>
+        </template>
       </template>
       <template v-else>
         <h1 class="auth-card__heading">
