@@ -16,7 +16,8 @@ const errorToastTitle = ref('')
 const errorToastMessage = ref('')
 const showUnverified = ref(false)
 const unverifiedEmail = ref('')
-const countdown = ref(1)
+const RESEND_COUNTDOWN_SECONDS = 30
+const countdown = ref(RESEND_COUNTDOWN_SECONDS)
 const isResending = ref(false)
 const resentSuccess = ref(false)
 let countdownTimer: ReturnType<typeof setInterval> | null = null
@@ -41,7 +42,7 @@ const resendButtonLabel = computed(() => {
 })
 
 function startCountdown() {
-  countdown.value = 30
+  countdown.value = RESEND_COUNTDOWN_SECONDS
   if (countdownTimer)
     clearInterval(countdownTimer)
   countdownTimer = setInterval(() => {
