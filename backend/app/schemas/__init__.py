@@ -2,7 +2,6 @@ from app.schemas.auth import (
     LoginRequest,
     MessageResponse,
     RegisterRequest,
-    TokenResponse,
     UserOut,
 )
 from app.schemas.course import (
@@ -27,7 +26,6 @@ __all__ = [
     "MessageResponse",
     "RegisterRequest",
     "UserOut",
-    "TokenResponse",
     "CourseOut",
     "CoursePairOut",
     "CoursePairsResponse",

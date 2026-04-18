@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.security import hash_password, verify_password
 from app.models.user import User
 from app.repositories.email_verification_token_repo import email_verification_token_repo
 from app.repositories.user_repo import user_repo
@@ -13,27 +13,19 @@ from app.schemas.auth import (
     MessageResponse,
     RegisterRequest,
     ResendVerificationRequest,
-    TokenResponse,
     UserOut,
 )
 from app.services.email_service import send_verification_email
 
 
 class AuthService:
-    def _build_token_response(
-        self, user: User, remember_me: bool = False
-    ) -> TokenResponse:
-        token = create_access_token(str(user.id), remember_me=remember_me)
-        return TokenResponse(
-            access_token=token,
-            token_type="bearer",
-            user=UserOut(
-                id=str(user.id),
-                email=user.email,
-                display_name=user.display_name,
-                is_active=user.is_active,
-                email_verified=user.email_verified,
-            ),
+    def _build_user_out(self, user: User) -> UserOut:
+        return UserOut(
+            id=str(user.id),
+            email=user.email,
+            display_name=user.display_name,
+            is_active=user.is_active,
+            email_verified=user.email_verified,
         )
 
     async def register(self, db: AsyncSession, req: RegisterRequest) -> MessageResponse:
@@ -60,7 +52,7 @@ class AuthService:
             )
         return MessageResponse(message="驗證信已寄出，請確認您的 NCU 學生信箱")
 
-    async def verify_email(self, db: AsyncSession, token: str) -> TokenResponse:
+    async def verify_email(self, db: AsyncSession, token: str) -> UserOut:
         record = await email_verification_token_repo.get_by_token(db, token)
         if record is None:
             raise HTTPException(
@@ -87,9 +79,9 @@ class AuthService:
             user.email_verified = True
             await db.flush()
 
-        return self._build_token_response(user)
+        return self._build_user_out(user)
 
-    async def login(self, db: AsyncSession, req: LoginRequest) -> TokenResponse:
+    async def login(self, db: AsyncSession, req: LoginRequest) -> UserOut:
         user = await user_repo.get_by_email(db, req.email)
         if not user or not verify_password(req.password, user.hashed_password):
             raise HTTPException(
@@ -100,7 +92,7 @@ class AuthService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="請先驗證您的電子信箱",
             )
-        return self._build_token_response(user, remember_me=req.remember_me)
+        return self._build_user_out(user)
 
     async def resend_verification(
         self, db: AsyncSession, req: ResendVerificationRequest

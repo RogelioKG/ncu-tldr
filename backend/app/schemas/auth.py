@@ -44,11 +44,3 @@ class UserOut(BaseModel):
     display_name: str = Field(alias="displayName")
     is_active: bool = Field(alias="isActive")
     email_verified: bool = Field(alias="emailVerified")
-
-
-class TokenResponse(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    access_token: str = Field(alias="accessToken")
-    token_type: str = Field(alias="tokenType", default="bearer")
-    user: UserOut

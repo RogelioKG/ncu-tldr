@@ -9,7 +9,6 @@ from app.schemas.auth import (
     MessageResponse,
     RegisterRequest,
     ResendVerificationRequest,
-    TokenResponse,
     UserOut,
 )
 from app.schemas.review import MyReviewOut
@@ -24,7 +23,7 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     return await auth_service.register(db, req)
 
 
-@router.get("/verify-email", response_model=TokenResponse)
+@router.get("/verify-email", response_model=UserOut)
 async def verify_email(
     token: str = Query(...),
     db: AsyncSession = Depends(get_db),
@@ -39,7 +38,7 @@ async def resend_verification(
     return await auth_service.resend_verification(db, req)
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=UserOut)
 async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     return await auth_service.login(db, req)
 
