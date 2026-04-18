@@ -5,6 +5,8 @@ import sorryDolphin from '@/assets/sorry_dophin.png'
 
 const props = defineProps<{
   visible: boolean
+  title?: string
+  message?: string
 }>()
 
 const emit = defineEmits<{
@@ -58,10 +60,10 @@ function handleReport() {
             </div>
             <div class="error-toast__text">
               <h3 class="error-toast__title">
-                哎呀，出了點小狀況
+                {{ title ?? '哎呀，出了點小狀況' }}
               </h3>
               <p class="error-toast__message">
-                不好意思讓你遇到這個問題了！我們已經知道囉，管理員會盡快來處理，請稍後再試試看吧～
+                {{ message ?? '不好意思讓你遇到這個問題了！我們已經知道囉，管理員會盡快來處理，請稍後再試試看吧～' }}
               </p>
             </div>
           </div>

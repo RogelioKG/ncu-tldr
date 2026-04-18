@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
+import { ApiError } from '@/api/client'
 import ErrorToast from '@/components/ErrorToast.vue'
 import { useFormValidation } from '@/composables/useFormValidation'
 import { registerSchema } from '@/schemas'
@@ -10,6 +11,8 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const showErrorToast = ref(false)
+const errorTitle = ref<string | undefined>(undefined)
+const errorMessage = ref<string | undefined>(undefined)
 
 // 使用 Zod 表單驗證
 const { form, errors, validateAll, touchField, getFieldError } = useFormValidation(
@@ -36,14 +39,27 @@ async function handleSubmit() {
     )
     router.push('/login')
   }
-  catch {
+  catch (err) {
+    if (err instanceof ApiError && err.status === 409) {
+      errorTitle.value = '已經註冊過了'
+      errorMessage.value = '這個信箱已經有帳號囉！直接去登入吧～'
+    }
+    else {
+      errorTitle.value = undefined
+      errorMessage.value = undefined
+    }
     showErrorToast.value = true
   }
 }
 </script>
 
 <template>
-  <ErrorToast :visible="showErrorToast" @close="showErrorToast = false" />
+  <ErrorToast
+    :visible="showErrorToast"
+    :title="errorTitle"
+    :message="errorMessage"
+    @close="showErrorToast = false"
+  />
   <div class="auth-page">
     <div class="auth-card">
       <h1 class="auth-card__heading">
