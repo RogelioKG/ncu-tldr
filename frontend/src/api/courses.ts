@@ -1,4 +1,4 @@
-import type { Course, CourseSummary } from '@/types'
+import type { Course, CourseSummary, TimeSlot } from '@/types'
 import { ApiError, request } from './client'
 
 /** Shape returned by GET /api/v1/courses and GET /api/v1/courses/{id} */
@@ -79,12 +79,13 @@ function normalizeApiCourse(raw: RawCourse): Course {
   }
 }
 
-export async function getCourses(params?: { q?: string, sort?: string }): Promise<Course[]> {
+export async function getCourses(params?: { q?: string, sort?: string, slots?: TimeSlot[] }): Promise<Course[]> {
   const query = new URLSearchParams()
   if (params?.q)
     query.set('q', params.q)
   if (params?.sort)
     query.set('sort', params.sort)
+  params?.slots?.forEach(s => query.append('slots', `${s.day}_${s.period}`))
   const suffix = query.toString() ? `?${query.toString()}` : ''
   const raw = await request<RawCourse[]>(`/api/v1/courses${suffix}`)
   return raw.map(normalizeApiCourse)

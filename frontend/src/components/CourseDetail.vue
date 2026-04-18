@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import type { Course, CourseComment } from '@/types'
-import { computed } from 'vue'
+import type { Course, CourseComment, TimeSlot } from '@/types'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import CourseAISummary from '@/components/CourseAISummary.vue'
 import CourseBasicInfo from '@/components/CourseBasicInfo.vue'
 import CourseComments from '@/components/CourseComments.vue'
 import CourseStarEvaluation from '@/components/CourseStarEvaluation.vue'
 import SearchBar from '@/components/SearchBar.vue'
+import TimeSlotButton from '@/components/TimeSlotButton.vue'
+import TimeSlotPanel from '@/components/TimeSlotPanel.vue'
 import { useSavedCourses } from '@/composables/useSavedCourses'
+import { useCourseStore } from '@/stores/useCourseStore'
 
 const props = defineProps<{
   course: Course
@@ -32,16 +36,26 @@ const emit = defineEmits<{
   ]
 }>()
 
+const router = useRouter()
+const courseStore = useCourseStore()
 const { isSaved, toggleSave } = useSavedCourses()
 
 const saved = computed(() => isSaved(props.course.id))
+const showSlotPanel = ref(false)
+const hasActiveSlots = computed(() => courseStore.selectedSlots.length > 0)
 
 function handleToggleSave() {
   toggleSave(props.course.id)
 }
 
-function handleSearch(_query: string) {
-  // Search functionality can be implemented here
+function handleSearch(query: string): void {
+  courseStore.setSearchQuery(query)
+  router.push({ name: 'home' })
+}
+
+function handleSlotSubmit(slots: TimeSlot[]): void {
+  courseStore.setSelectedSlots(slots)
+  router.push({ name: 'home' })
 }
 
 function handleReply(payload: { parentId: number, content: string }) {
@@ -89,7 +103,13 @@ function handleSubmitReview(payload: {
         </div>
         <div class="cdp__search-wrapper">
           <SearchBar @search="handleSearch" />
+          <TimeSlotButton :has-active="hasActiveSlots" @open="showSlotPanel = true" />
         </div>
+        <TimeSlotPanel
+          :visible="showSlotPanel"
+          @close="showSlotPanel = false"
+          @submit="handleSlotSubmit"
+        />
       </div>
 
       <!-- AI Hashtags -->
@@ -195,7 +215,9 @@ function handleSubmitReview(payload: {
 
 .cdp__search-wrapper {
   flex-shrink: 0;
-  width: 320px;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
 /* Hashtags */

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Course, SortCriterion, WishCourse } from '@/types'
+import type { Course, SortCriterion, TimeSlot, WishCourse } from '@/types'
 import { useDebounceFn } from '@vueuse/core'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
@@ -8,6 +8,8 @@ import CourseGrid from '@/components/CourseGrid.vue'
 import CoursePagination from '@/components/CoursePagination.vue'
 import SavedCoursesPanel from '@/components/SavedCoursesPanel.vue'
 import SearchBar from '@/components/SearchBar.vue'
+import TimeSlotButton from '@/components/TimeSlotButton.vue'
+import TimeSlotPanel from '@/components/TimeSlotPanel.vue'
 import WishingWell from '@/components/WishingWell.vue'
 import { useSavedCourses } from '@/composables/useSavedCourses'
 import { useCourseStore } from '@/stores/useCourseStore'
@@ -63,9 +65,18 @@ function handleSelectCourse(course: Course) {
   router.push({ name: 'course-detail', params: { id: course.id } })
 }
 
+const showSlotPanel = ref(false)
+const hasActiveSlots = computed(() => courseStore.selectedSlots.length > 0)
+
 const handleSearch = useDebounceFn((query: string) => {
   courseStore.setSearchQuery(query)
 }, 300)
+
+function handleSlotSubmit(slots: TimeSlot[]): void {
+  courseStore.setSelectedSlots(slots)
+  courseStore.fetchCourses()
+  currentPage.value = 1
+}
 
 function handleWishCourseSelect(course: WishCourse) {
   router.push({ name: 'course-detail', params: { id: course.id } })
@@ -82,7 +93,13 @@ function handleWishCourseSelect(course: WishCourse) {
       <!-- 搜尋欄 -->
       <div class="main__search">
         <SearchBar @search="handleSearch" />
+        <TimeSlotButton :has-active="hasActiveSlots" @open="showSlotPanel = true" />
       </div>
+      <TimeSlotPanel
+        :visible="showSlotPanel"
+        @close="showSlotPanel = false"
+        @submit="handleSlotSubmit"
+      />
 
       <!-- 篩選與排序控制 -->
       <CourseFilterSort
@@ -129,7 +146,9 @@ function handleWishCourseSelect(course: WishCourse) {
 
 .main__search {
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: var(--spacing-sm);
   margin-bottom: var(--spacing-2xl);
 }
 

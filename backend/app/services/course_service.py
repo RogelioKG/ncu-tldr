@@ -13,6 +13,21 @@ from app.schemas.course import (
 
 _DAY_MAP = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六", 7: "日"}
 
+
+def _parse_slots(slots: list[str]) -> list[tuple[int, str]]:
+    result = []
+    for s in slots:
+        parts = s.split("_", 1)
+        if len(parts) != 2:
+            continue
+        try:
+            day = int(parts[0])
+        except ValueError:
+            continue
+        result.append((day, parts[1]))
+    return result
+
+
 SORT_FIELD_MAP = {
     "reward": "gain",
     "score": "high_score",
@@ -107,10 +122,12 @@ class CourseService:
         db: AsyncSession,
         q: str | None = None,
         sort: str | None = None,
+        slots: list[str] | None = None,
     ) -> list[CourseOut]:
         sort_field, sort_dir = _parse_sort(sort)
+        parsed_slots = _parse_slots(slots) if slots else []
         rows = await course_repo.list_courses(
-            db, q=q, sort_field=sort_field, sort_dir=sort_dir
+            db, q=q, sort_field=sort_field, sort_dir=sort_dir, slots=parsed_slots
         )
         return [_to_course_out(row) for row in rows]
 

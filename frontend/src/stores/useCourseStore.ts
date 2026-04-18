@@ -1,4 +1,4 @@
-import type { Course, CourseRatings, SortCriterion } from '@/types'
+import type { Course, CourseRatings, SortCriterion, TimeSlot } from '@/types'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { getCourseById, getCourses } from '@/api/courses'
@@ -26,6 +26,7 @@ export const useCourseStore = defineStore('course', () => {
     courses.value.find(c => c.id === selectedCourseId.value) ?? null,
   )
   const searchQuery = ref('')
+  const selectedSlots = ref<TimeSlot[]>([])
   const sortCriteria = ref<SortCriterion[]>([
     { field: 'overall', label: '綜合平均', direction: 'desc', enabled: false },
     { field: 'gain', label: '收穫', direction: 'desc', enabled: false },
@@ -68,7 +69,7 @@ export const useCourseStore = defineStore('course', () => {
       const sort = active
         ? `${SORT_PARAM_MAP[active.field] ?? active.field}:${active.direction}`
         : undefined
-      courses.value = await getCourses({ q: searchQuery.value, sort })
+      courses.value = await getCourses({ q: searchQuery.value, sort, slots: selectedSlots.value })
     }
     finally {
       isLoading.value = false
@@ -99,6 +100,10 @@ export const useCourseStore = defineStore('course', () => {
     searchQuery.value = query
   }
 
+  function setSelectedSlots(slots: TimeSlot[]): void {
+    selectedSlots.value = slots
+  }
+
   function setSortCriteria(criteria: SortCriterion[]): void {
     sortCriteria.value = criteria
   }
@@ -126,7 +131,9 @@ export const useCourseStore = defineStore('course', () => {
     applyReviewRatings,
     searchQuery,
     selectedCourse,
+    selectedSlots,
     setSearchQuery,
+    setSelectedSlots,
     setSortCriteria,
     sortCriteria,
   }

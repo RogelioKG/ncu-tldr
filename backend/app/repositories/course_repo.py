@@ -1,10 +1,11 @@
-from sqlalchemy import Float, cast, func, or_, select
+from sqlalchemy import Float, cast, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.course import Course
 from app.models.course_department import CourseDepartment
 from app.models.course_teacher import CourseTeacher
+from app.models.course_time import CourseTime
 from app.models.review import Review
 from app.models.teacher import Teacher
 
@@ -30,6 +31,7 @@ class CourseRepository:
         q: str | None = None,
         sort_field: str | None = None,
         sort_dir: str = "desc",
+        slots: list[tuple[int, str]] | None = None,
     ) -> list[tuple]:
         if sort_dir not in ("asc", "desc"):
             sort_dir = "desc"
@@ -76,6 +78,19 @@ class CourseRepository:
                 )
                 .distinct()
             )
+
+        if slots:
+            slot_conditions = [
+                (CourseTime.day == day) & (CourseTime.period == period)
+                for day, period in slots
+            ]
+            exists_subq = exists(
+                select(CourseTime.id).where(
+                    CourseTime.course_id == Course.id,
+                    or_(*slot_conditions),
+                )
+            )
+            stmt = stmt.where(exists_subq)
 
         sort_col_map = {
             "gain": ratings_sq.c.avg_gain,

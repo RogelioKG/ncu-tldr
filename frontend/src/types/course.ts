@@ -116,6 +116,12 @@ export interface WishCourse {
   hasVoted: boolean
 }
 
+/** 單一時段選取 */
+export interface TimeSlot {
+  day: number
+  period: string
+}
+
 /** 排序方向 */
 export type SortDirection = 'desc' | 'asc'
 

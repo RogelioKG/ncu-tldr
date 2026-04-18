@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,9 +20,10 @@ async def get_pairs(db: AsyncSession = Depends(get_db)):
 async def list_courses(
     q: str | None = Query(default=None),
     sort: str | None = Query(default=None),
+    slots: Annotated[list[str], Query()] = [],
     db: AsyncSession = Depends(get_db),
 ):
-    return await course_service.list_courses(db, q=q, sort=sort)
+    return await course_service.list_courses(db, q=q, sort=sort, slots=slots)
 
 
 @router.get("/{course_id}", response_model=CourseOut)
