@@ -27,10 +27,10 @@ class Settings(BaseSettings):
     sqlalchemy_echo: bool = Field(default=False)
 
     # AWS SES
-    aws_access_key_id: str = Field(default="")
-    aws_secret_access_key: str = Field(default="")
+    aws_access_key_id: str = Field(..., min_length=1)
+    aws_secret_access_key: str = Field(..., min_length=1)
     aws_region: str = Field(default="ap-southeast-1")
-    email_from: str = Field(default="noreply@ncutldr.com")
+    email_from: str = Field(default="NCU-TLDR <noreply@ncutldr.com>")
     verify_base_url: str = Field(default="https://ncutldr.com")
 
 
