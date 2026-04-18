@@ -20,8 +20,10 @@ from app.services.email_service import send_verification_email
 
 
 class AuthService:
-    def _build_token_response(self, user: User) -> TokenResponse:
-        token = create_access_token(str(user.id))
+    def _build_token_response(
+        self, user: User, remember_me: bool = False
+    ) -> TokenResponse:
+        token = create_access_token(str(user.id), remember_me=remember_me)
         return TokenResponse(
             access_token=token,
             token_type="bearer",
@@ -98,7 +100,7 @@ class AuthService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="請先驗證您的電子信箱",
             )
-        return self._build_token_response(user)
+        return self._build_token_response(user, remember_me=req.remember_me)
 
     async def resend_verification(
         self, db: AsyncSession, req: ResendVerificationRequest

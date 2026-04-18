@@ -9,6 +9,7 @@ _settings = get_settings()
 _SECRET_KEY: str = _settings.jwt_secret_key
 _ALGORITHM = "HS256"
 _ACCESS_TOKEN_EXPIRE_MINUTES = _settings.access_token_expire_minutes
+_REMEMBER_ME_EXPIRE_MINUTES = _settings.remember_me_expire_minutes
 
 
 def hash_password(plain: str) -> str:
@@ -19,10 +20,11 @@ def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
-def create_access_token(sub: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(
-        minutes=_ACCESS_TOKEN_EXPIRE_MINUTES
+def create_access_token(sub: str, remember_me: bool = False) -> str:
+    minutes = (
+        _REMEMBER_ME_EXPIRE_MINUTES if remember_me else _ACCESS_TOKEN_EXPIRE_MINUTES
     )
+    expire = datetime.now(timezone.utc) + timedelta(minutes=minutes)
     payload = {"sub": sub, "exp": expire}
     return jwt.encode(payload, _SECRET_KEY, algorithm=_ALGORITHM)
 

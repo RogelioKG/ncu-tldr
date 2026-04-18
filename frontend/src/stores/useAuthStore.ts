@@ -20,10 +20,10 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = computed(() => Boolean(token.value && user.value))
   const displayName = computed(() => user.value?.displayName ?? '')
 
-  async function loginWithPassword(email: string, password: string): Promise<void> {
+  async function loginWithPassword(email: string, password: string, rememberMe = false): Promise<void> {
     isLoading.value = true
     try {
-      const result = await login({ email, password })
+      const result = await login({ email, password, rememberMe })
       token.value = result.accessToken
       user.value = result.user
       localStorage.setItem(AUTH_TOKEN_KEY, result.accessToken)

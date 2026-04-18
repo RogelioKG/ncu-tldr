@@ -21,8 +21,11 @@ class RegisterRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     email: EmailStr
     password: str
+    remember_me: bool = Field(alias="rememberMe", default=False)
 
 
 class ResendVerificationRequest(BaseModel):

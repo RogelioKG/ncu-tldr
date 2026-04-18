@@ -21,6 +21,7 @@ export interface MessageResponse {
 export interface LoginPayload {
   email: string
   password: string
+  rememberMe?: boolean
 }
 
 export interface RegisterPayload extends LoginPayload {

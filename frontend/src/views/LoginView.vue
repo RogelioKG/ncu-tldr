@@ -20,6 +20,8 @@ const countdown = ref(30)
 const isResending = ref(false)
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 
+const rememberMe = ref(false)
+
 // 使用 Zod 表單驗證
 const { form, errors, validateAll, touchField, getFieldError } = useFormValidation(
   loginSchema,
@@ -83,7 +85,7 @@ async function handleSubmit() {
     return
 
   try {
-    await authStore.loginWithPassword(form.email, form.password)
+    await authStore.loginWithPassword(form.email, form.password, rememberMe.value)
     router.push('/')
   }
   catch (err) {
@@ -193,6 +195,14 @@ async function handleResend() {
           </div>
 
           <div class="auth-form__options">
+            <label class="auth-form__remember">
+              <input
+                v-model="rememberMe"
+                type="checkbox"
+                class="auth-form__remember-input"
+              >
+              記住我的登入狀態
+            </label>
             <a href="#" class="auth-form__forgot" @click.prevent>
               忘記密碼？
             </a>
@@ -320,7 +330,25 @@ async function handleResend() {
 
 .auth-form__options {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-form__remember {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.auth-form__remember-input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-accent-primary);
+  cursor: pointer;
 }
 
 .auth-form__forgot {
