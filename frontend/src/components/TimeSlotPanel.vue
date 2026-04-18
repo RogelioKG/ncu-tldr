@@ -202,7 +202,6 @@ function handleSubmit(): void {
             <button
               type="button"
               class="tsp__submit"
-              :disabled="!hasSelection"
               @click="handleSubmit"
             >
               送出
