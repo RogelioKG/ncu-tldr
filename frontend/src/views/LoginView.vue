@@ -12,6 +12,8 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const showErrorToast = ref(false)
+const errorToastTitle = ref('')
+const errorToastMessage = ref('')
 const showUnverified = ref(false)
 const unverifiedEmail = ref('')
 const countdown = ref(30)
@@ -58,6 +60,24 @@ onUnmounted(() => {
     clearInterval(countdownTimer)
 })
 
+function getLoginError(err: unknown): { title: string, message: string } {
+  if (err instanceof ApiError) {
+    switch (err.status) {
+      case 401:
+        return { title: '帳號或密碼錯誤', message: '請確認電子信箱和密碼是否正確，並再試一次。' }
+      case 404:
+        return { title: '找不到此帳號', message: '請確認電子信箱是否正確，或前往註冊頁面建立新帳號。' }
+      case 422:
+        return { title: '輸入資料有誤', message: err.message || '請確認填寫的資料格式是否正確。' }
+      case 429:
+        return { title: '嘗試次數過多', message: '您已多次嘗試登入失敗，請稍後再試。' }
+      default:
+        return { title: '登入失敗', message: err.message || '發生了一些問題，請稍後再試。' }
+    }
+  }
+  return { title: '哎呀，出了點小狀況', message: '無法連線到伺服器，請稍後再試。' }
+}
+
 async function handleSubmit() {
   if (!validateAll())
     return
@@ -72,6 +92,9 @@ async function handleSubmit() {
       showUnverified.value = true
     }
     else {
+      const { title, message } = getLoginError(err)
+      errorToastTitle.value = title
+      errorToastMessage.value = message
       showErrorToast.value = true
     }
   }
@@ -93,7 +116,12 @@ async function handleResend() {
 </script>
 
 <template>
-  <ErrorToast :visible="showErrorToast" @close="showErrorToast = false" />
+  <ErrorToast
+    :visible="showErrorToast"
+    :title="errorToastTitle"
+    :message="errorToastMessage"
+    @close="showErrorToast = false"
+  />
   <div class="auth-page">
     <div class="auth-card">
       <template v-if="showUnverified">
