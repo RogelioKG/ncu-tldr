@@ -18,6 +18,7 @@ const showUnverified = ref(false)
 const unverifiedEmail = ref('')
 const countdown = ref(30)
 const isResending = ref(false)
+const resentSuccess = ref(false)
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 const rememberMe = ref(false)
@@ -106,6 +107,8 @@ async function handleResend() {
   isResending.value = true
   try {
     await resendVerification(unverifiedEmail.value)
+    resentSuccess.value = true
+    startCountdown()
   }
   catch {
     // silently ignore — the endpoint always returns 200
@@ -113,7 +116,6 @@ async function handleResend() {
   finally {
     isResending.value = false
   }
-  showUnverified.value = false
 }
 </script>
 
@@ -135,7 +137,7 @@ async function handleResend() {
             信箱還沒驗證哦！
           </h1>
           <p class="unverified-panel__desc">
-            驗證信已寄送到
+            {{ resentSuccess ? '驗證信已重新寄送到' : '驗證信已寄送到' }}
             <strong>{{ unverifiedEmail }}</strong>，請查收信件並點擊連結完成驗證。
           </p>
           <button
