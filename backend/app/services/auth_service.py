@@ -12,6 +12,7 @@ from app.schemas.auth import (
     LoginRequest,
     MessageResponse,
     RegisterRequest,
+    ResendVerificationRequest,
     TokenResponse,
     UserOut,
 )
@@ -98,6 +99,18 @@ class AuthService:
                 detail="請先驗證您的電子信箱",
             )
         return self._build_token_response(user)
+
+    async def resend_verification(
+        self, db: AsyncSession, req: ResendVerificationRequest
+    ) -> MessageResponse:
+        user = await user_repo.get_by_email(db, str(req.email))
+        if user is not None and not user.email_verified:
+            token_str = str(uuid.uuid4())
+            await email_verification_token_repo.create(
+                db, user_id=user.id, token=token_str
+            )
+            send_verification_email(user.email, token_str)
+        return MessageResponse(message="若此信箱已註冊且尚未驗證，驗證信已重新寄出")
 
 
 auth_service = AuthService()

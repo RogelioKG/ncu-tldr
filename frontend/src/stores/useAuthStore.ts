@@ -9,6 +9,7 @@ interface AuthUser {
   email: string
   displayName: string
   isActive: boolean
+  emailVerified: boolean
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -39,10 +40,7 @@ export const useAuthStore = defineStore('auth', () => {
   ): Promise<void> {
     isLoading.value = true
     try {
-      const result = await register({ email, password, displayName: displayNameValue })
-      token.value = result.accessToken
-      user.value = result.user
-      localStorage.setItem(AUTH_TOKEN_KEY, result.accessToken)
+      await register({ email, password, displayName: displayNameValue })
     }
     finally {
       isLoading.value = false

@@ -8,6 +8,7 @@ from app.schemas.auth import (
     LoginRequest,
     MessageResponse,
     RegisterRequest,
+    ResendVerificationRequest,
     TokenResponse,
     UserOut,
 )
@@ -29,6 +30,13 @@ async def verify_email(
     db: AsyncSession = Depends(get_db),
 ):
     return await auth_service.verify_email(db, token)
+
+
+@router.post("/resend-verification", response_model=MessageResponse)
+async def resend_verification(
+    req: ResendVerificationRequest, db: AsyncSession = Depends(get_db)
+):
+    return await auth_service.resend_verification(db, req)
 
 
 @router.post("/login", response_model=TokenResponse)

@@ -5,12 +5,17 @@ export interface AuthUser {
   email: string
   displayName: string
   isActive: boolean
+  emailVerified: boolean
 }
 
 export interface AuthResult {
   accessToken: string
   tokenType: string
   user: AuthUser
+}
+
+export interface MessageResponse {
+  message: string
 }
 
 export interface LoginPayload {
@@ -29,10 +34,17 @@ export async function login(payload: LoginPayload): Promise<AuthResult> {
   })
 }
 
-export async function register(payload: RegisterPayload): Promise<AuthResult> {
-  return await request<AuthResult>('/api/v1/auth/register', {
+export async function register(payload: RegisterPayload): Promise<MessageResponse> {
+  return await request<MessageResponse>('/api/v1/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
+  })
+}
+
+export async function resendVerification(email: string): Promise<MessageResponse> {
+  return await request<MessageResponse>('/api/v1/auth/resend-verification', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
   })
 }
 
