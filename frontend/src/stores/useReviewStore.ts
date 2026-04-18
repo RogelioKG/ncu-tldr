@@ -4,11 +4,12 @@ import type { CourseComment } from '@/types'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { reactToReview } from '@/api/likes'
-import { createReview, getReviews } from '@/api/reviews'
+import { createReview, deleteReview, getMyReviews, getReviews } from '@/api/reviews'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 export const useReviewStore = defineStore('review', () => {
   const reviewsByCourse = ref<Record<number, CourseComment[]>>({})
+  const myReviews = ref<CourseComment[]>([])
   const isLoading = ref(false)
 
   const totalReviewCount = computed(() =>
@@ -63,11 +64,45 @@ export const useReviewStore = defineStore('review', () => {
     await reactToReview(courseId, reviewId, reaction, authStore.token ?? undefined)
   }
 
+  async function fetchMyReviews(): Promise<void> {
+    const authStore = useAuthStore()
+    const token = authStore.token
+    if (!token)
+      throw new Error('請先登入')
+
+    isLoading.value = true
+    try {
+      myReviews.value = await getMyReviews(token)
+    }
+    finally {
+      isLoading.value = false
+    }
+  }
+
+  async function removeReview(courseId: number, reviewId: number): Promise<void> {
+    const authStore = useAuthStore()
+    const token = authStore.token
+    if (!token)
+      throw new Error('登入後才能刪除評價')
+
+    await deleteReview(courseId, reviewId, token)
+
+    const current = reviewsByCourse.value[courseId] ?? []
+    reviewsByCourse.value = {
+      ...reviewsByCourse.value,
+      [courseId]: current.filter(review => review.id !== reviewId),
+    }
+    myReviews.value = myReviews.value.filter(review => review.id !== reviewId)
+  }
+
   return {
     fetchReviews,
+    fetchMyReviews,
     getCourseReviews,
     isLoading,
+    myReviews,
     reactToItem,
+    removeReview,
     reviewsByCourse,
     submitReview,
     totalReviewCount,

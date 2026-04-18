@@ -9,6 +9,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   reply: [{ parentId: number, content: string }]
+  deleteComment: [{ commentId: number }]
 }>()
 
 type SortMode = 'date' | 'popular'
@@ -57,6 +58,14 @@ function submitReply() {
   replyingToId.value = null
   replyInput.value = ''
 }
+
+function deleteComment(commentId: number) {
+  emit('deleteComment', { commentId })
+}
+
+function displayUserLabel(comment: CourseComment): string {
+  return comment.title ? `${comment.user}：${comment.title}` : comment.user
+}
 </script>
 
 <template>
@@ -94,14 +103,14 @@ function submitReply() {
           <div class="comments__item-top">
             <div class="comments__user-row">
               <span class="comments__avatar">👤</span>
-              <span class="comments__user">{{ node.root.user }}：{{ node.root.title }}</span>
+              <span class="comments__user">{{ displayUserLabel(node.root) }}</span>
             </div>
             <span class="comments__date">({{ node.root.date }})</span>
           </div>
           <p class="comments__content">
             {{ node.root.content }}
           </p>
-          <div class="comments__actions">
+          <div v-if="!node.root.isDeleted" class="comments__actions">
             <button type="button" class="comments__vote-btn" aria-label="按讚" disabled title="即將推出">
               👍 <span v-if="node.root.likes">{{ node.root.likes }}</span>
             </button>
@@ -116,6 +125,15 @@ function submitReply() {
             >
               回覆
             </button>
+            <button
+              v-if="node.root.canDelete"
+              type="button"
+              class="comments__delete-btn"
+              aria-label="刪除留言"
+              @click="deleteComment(node.root.id)"
+            >
+              刪除
+            </button>
           </div>
         </li>
         <!-- 回覆（同縮排） -->
@@ -127,25 +145,34 @@ function submitReply() {
           <div class="comments__item-top">
             <div class="comments__user-row">
               <span class="comments__avatar">👤</span>
-              <span class="comments__user">{{ reply.user }}：{{ reply.title }}</span>
+              <span class="comments__user">{{ displayUserLabel(reply) }}</span>
             </div>
             <span class="comments__date">({{ reply.date }})</span>
           </div>
           <p class="comments__content">
             {{ reply.content }}
           </p>
-          <div class="comments__actions">
+          <div v-if="!reply.isDeleted" class="comments__actions">
             <button type="button" class="comments__vote-btn" aria-label="按讚">
               👍 <span v-if="reply.likes">{{ reply.likes }}</span>
             </button>
             <button type="button" class="comments__vote-btn" aria-label="倒讚">
               👎 <span v-if="reply.dislikes">{{ reply.dislikes }}</span>
             </button>
+            <button
+              v-if="reply.canDelete"
+              type="button"
+              class="comments__delete-btn"
+              aria-label="刪除留言"
+              @click="deleteComment(reply.id)"
+            >
+              刪除
+            </button>
           </div>
         </li>
         <!-- 回覆輸入框（inline） -->
         <li
-          v-if="replyingToId === node.root.id"
+          v-if="replyingToId === node.root.id && !node.root.isDeleted"
           class="comments__reply-form"
         >
           <input
@@ -349,7 +376,8 @@ function submitReply() {
 }
 
 .comments__vote-btn,
-.comments__reply-btn {
+.comments__reply-btn,
+.comments__delete-btn {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -362,7 +390,8 @@ function submitReply() {
 }
 
 .comments__vote-btn:hover,
-.comments__reply-btn:hover {
+.comments__reply-btn:hover,
+.comments__delete-btn:hover {
   background: var(--color-accent-primary);
   color: white;
 }

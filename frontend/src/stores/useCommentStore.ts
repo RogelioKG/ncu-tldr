@@ -3,7 +3,7 @@ import type { ReactionType } from '@/api/likes'
 import type { CourseComment } from '@/types'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { createComment, getComments } from '@/api/comments'
+import { createComment, deleteComment, getComments } from '@/api/comments'
 import { reactToComment } from '@/api/likes'
 import { useAuthStore } from '@/stores/useAuthStore'
 
@@ -62,6 +62,32 @@ export const useCommentStore = defineStore('comment', () => {
     await reactToComment(courseId, commentId, reaction, authStore.token ?? undefined)
   }
 
+  async function removeComment(courseId: number, commentId: number): Promise<void> {
+    const authStore = useAuthStore()
+    const token = authStore.token
+    if (!token)
+      throw new Error('登入後才能刪除留言')
+
+    await deleteComment(courseId, commentId, token)
+
+    const current = commentsByCourse.value[courseId] ?? []
+    commentsByCourse.value = {
+      ...commentsByCourse.value,
+      [courseId]: current.map(comment =>
+        comment.id !== commentId
+          ? comment
+          : {
+              ...comment,
+              isDeleted: true,
+              canDelete: false,
+              content: '此留言已刪除',
+              likes: 0,
+              dislikes: 0,
+            },
+      ),
+    }
+  }
+
   return {
     addReply,
     commentsByCourse,
@@ -69,5 +95,6 @@ export const useCommentStore = defineStore('comment', () => {
     getCourseComments,
     isLoading,
     reactToItem,
+    removeComment,
   }
 })

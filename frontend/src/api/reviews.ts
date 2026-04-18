@@ -3,6 +3,7 @@ import { request } from './client'
 
 interface RawReview {
   id: number
+  courseId?: number
   user: string
   title: string
   content: string | null
@@ -10,6 +11,8 @@ interface RawReview {
   likes: number
   dislikes: number
   parentId: number | null
+  isDeleted?: boolean
+  canDelete?: boolean
   ratings: {
     gain: number | null
     highScore: number | null
@@ -24,6 +27,7 @@ interface RawReview {
 function normalizeReview(raw: RawReview): CourseComment {
   return {
     id: raw.id,
+    courseId: raw.courseId,
     user: raw.user,
     title: raw.title,
     content: raw.content ?? '',
@@ -31,6 +35,8 @@ function normalizeReview(raw: RawReview): CourseComment {
     likes: raw.likes,
     dislikes: raw.dislikes,
     parentId: raw.parentId ?? undefined,
+    isDeleted: raw.isDeleted ?? false,
+    canDelete: raw.canDelete ?? false,
     ratings: raw.ratings ?? undefined,
   }
 }
@@ -46,6 +52,11 @@ export interface SubmitReviewInput {
 
 export async function getReviews(courseId: number): Promise<CourseComment[]> {
   const raw = await request<RawReview[]>(`/api/v1/courses/${courseId}/reviews`)
+  return raw.map(normalizeReview)
+}
+
+export async function getMyReviews(token: string): Promise<CourseComment[]> {
+  const raw = await request<RawReview[]>('/api/v1/auth/me/reviews', { token })
   return raw.map(normalizeReview)
 }
 
@@ -67,4 +78,15 @@ export async function createReview(
     token,
   })
   return normalizeReview(raw)
+}
+
+export async function deleteReview(
+  courseId: number,
+  reviewId: number,
+  token: string,
+): Promise<void> {
+  await request<void>(`/api/v1/courses/${courseId}/reviews/${reviewId}`, {
+    method: 'DELETE',
+    token,
+  })
 }

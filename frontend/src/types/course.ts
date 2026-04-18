@@ -52,6 +52,8 @@ export interface CourseSummary {
 
 export interface CourseComment {
   id: number
+  /** 所屬課程 ID（我的評價頁需要） */
+  courseId?: number
   user: string
   /** 留言標題 / 一句話摘要 */
   title: string
@@ -64,6 +66,10 @@ export interface CourseComment {
   dislikes: number
   /** 回覆對象 ID（undefined/null = 根留言） */
   parentId?: number
+  /** 是否為軟刪除內容 */
+  isDeleted?: boolean
+  /** 目前登入者是否可刪除 */
+  canDelete?: boolean
   /** 評分資訊（可選，用於本地即時重算） */
   ratings?: CourseRatings
 }

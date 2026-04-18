@@ -10,6 +10,8 @@ interface RawComment {
   likes: number
   dislikes: number
   parentId: number | null
+  isDeleted?: boolean
+  canDelete?: boolean
 }
 
 function normalizeComment(raw: RawComment): CourseComment {
@@ -22,12 +24,13 @@ function normalizeComment(raw: RawComment): CourseComment {
     likes: raw.likes,
     dislikes: raw.dislikes,
     parentId: raw.parentId ?? undefined,
+    isDeleted: raw.isDeleted ?? false,
+    canDelete: raw.canDelete ?? false,
   }
 }
 
 export interface CreateCommentPayload {
   content: string
-  title?: string
   parentId?: number
 }
 
@@ -41,11 +44,9 @@ export async function createComment(
   payload: CreateCommentPayload,
   token: string,
 ): Promise<CourseComment> {
-  const body: { content: string, title?: string, parentId?: number } = {
+  const body: { content: string, parentId?: number } = {
     content: payload.content,
   }
-  if (payload.title != null)
-    body.title = payload.title
   if (payload.parentId != null)
     body.parentId = payload.parentId
 
@@ -55,4 +56,15 @@ export async function createComment(
     token,
   })
   return normalizeComment(raw)
+}
+
+export async function deleteComment(
+  courseId: number,
+  commentId: number,
+  token: string,
+): Promise<void> {
+  await request<void>(`/api/v1/courses/${courseId}/comments/${commentId}`, {
+    method: 'DELETE',
+    token,
+  })
 }

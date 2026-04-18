@@ -37,6 +37,12 @@ async function handleReply(payload: { parentId: number, content: string }) {
   })
 }
 
+async function handleDeleteComment(payload: { commentId: number }) {
+  if (Number.isNaN(courseId.value))
+    return
+  await commentStore.removeComment(courseId.value, payload.commentId)
+}
+
 async function handleSubmitReview(payload: {
   semester: string
   title: string
@@ -86,6 +92,7 @@ onMounted(loadData)
         :reviews="reviews"
         :comments="comments"
         @reply="handleReply"
+        @delete-comment="handleDeleteComment"
         @submit-review="handleSubmitReview"
       />
     </div>
