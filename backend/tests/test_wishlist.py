@@ -13,7 +13,7 @@ def _student_email() -> str:
     return f"{student_id}@cc.ncu.edu.tw"
 
 
-async def _register_and_verify(client: AsyncClient) -> str:
+async def _register_and_verify(client: AsyncClient) -> None:
     captured: dict[str, str] = {}
 
     def capture(email: str, token: str) -> bool:
@@ -38,7 +38,7 @@ async def _register_and_verify(client: AsyncClient) -> str:
         "/api/v1/auth/verify-email", params={"token": captured["token"]}
     )
     assert verify_resp.status_code == 200
-    return verify_resp.json()["accessToken"]
+    # Cookies are now set on the client automatically — no token returned
 
 
 async def _create_course(db: AsyncSession, *, title: str) -> int:
@@ -84,13 +84,13 @@ async def test_vote_for_course_success_and_visible_in_list(
     db: AsyncSession,
 ) -> None:
     course_id = await _create_course(db, title="Distributed Systems")
-    token = await _register_and_verify(client)
-    headers = {"Authorization": f"Bearer {token}"}
+    await _register_and_verify(client)
 
-    vote_resp = await client.post(f"/api/v1/wishlist/{course_id}", headers=headers)
+    # httpx AsyncClient auto-sends cookies set during _register_and_verify
+    vote_resp = await client.post(f"/api/v1/wishlist/{course_id}")
     assert vote_resp.status_code == 204
 
-    list_resp = await client.get("/api/v1/wishlist", headers=headers)
+    list_resp = await client.get("/api/v1/wishlist")
     assert list_resp.status_code == 200
     payload = list_resp.json()
     assert len(payload) == 1
@@ -108,11 +108,11 @@ async def test_vote_for_same_course_twice_returns_conflict(
     db: AsyncSession,
 ) -> None:
     course_id = await _create_course(db, title="Operating Systems")
-    token = await _register_and_verify(client)
-    headers = {"Authorization": f"Bearer {token}"}
+    await _register_and_verify(client)
 
-    first = await client.post(f"/api/v1/wishlist/{course_id}", headers=headers)
-    second = await client.post(f"/api/v1/wishlist/{course_id}", headers=headers)
+    # httpx AsyncClient auto-sends cookies set during _register_and_verify
+    first = await client.post(f"/api/v1/wishlist/{course_id}")
+    second = await client.post(f"/api/v1/wishlist/{course_id}")
 
     assert first.status_code == 204
     assert second.status_code == 409
@@ -120,11 +120,8 @@ async def test_vote_for_same_course_twice_returns_conflict(
 
 @pytest.mark.asyncio
 async def test_vote_for_missing_course_returns_not_found(client: AsyncClient) -> None:
-    token = await _register_and_verify(client)
-    resp = await client.post(
-        "/api/v1/wishlist/2147483647",
-        headers={"Authorization": f"Bearer {token}"},
-    )
+    await _register_and_verify(client)
+    resp = await client.post("/api/v1/wishlist/2147483647")
     assert resp.status_code == 404
 
 
@@ -134,26 +131,23 @@ async def test_delete_wishlist_not_found(
     db: AsyncSession,
 ) -> None:
     course_id = await _create_course(db, title="Not Voted Yet")
-    token = await _register_and_verify(client)
-    resp = await client.delete(
-        f"/api/v1/wishlist/{course_id}",
-        headers={"Authorization": f"Bearer {token}"},
-    )
+    await _register_and_verify(client)
+    resp = await client.delete(f"/api/v1/wishlist/{course_id}")
     assert resp.status_code == 404
 
 
 @pytest.mark.asyncio
 async def test_delete_wishlist_success(client: AsyncClient, db: AsyncSession) -> None:
     course_id = await _create_course(db, title="Course To Unvote")
-    token = await _register_and_verify(client)
-    headers = {"Authorization": f"Bearer {token}"}
+    await _register_and_verify(client)
 
-    create_resp = await client.post(f"/api/v1/wishlist/{course_id}", headers=headers)
+    # httpx AsyncClient auto-sends cookies set during _register_and_verify
+    create_resp = await client.post(f"/api/v1/wishlist/{course_id}")
     assert create_resp.status_code == 204
 
-    del_resp = await client.delete(f"/api/v1/wishlist/{course_id}", headers=headers)
+    del_resp = await client.delete(f"/api/v1/wishlist/{course_id}")
     assert del_resp.status_code == 204
 
-    list_resp = await client.get("/api/v1/wishlist", headers=headers)
+    list_resp = await client.get("/api/v1/wishlist")
     course_ids = [item["course_id"] for item in list_resp.json()]
     assert course_id not in course_ids

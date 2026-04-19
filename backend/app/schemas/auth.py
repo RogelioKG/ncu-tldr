@@ -1,4 +1,5 @@
 import re
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
@@ -39,7 +40,7 @@ class MessageResponse(BaseModel):
 class UserOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
-    id: str
+    id: UUID
     email: str
     display_name: str = Field(alias="displayName")
     is_active: bool = Field(alias="isActive")

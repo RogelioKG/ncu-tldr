@@ -65,11 +65,10 @@ async def test_create_review_authenticated(client: AsyncClient) -> None:
             },
         )
 
-    verify_resp = await client.get(
-        "/api/v1/auth/verify-email", params={"token": captured["token"]}
-    )
-    token = verify_resp.json()["accessToken"]
+    # Verify email → cookies are set on the client automatically
+    await client.get("/api/v1/auth/verify-email", params={"token": captured["token"]})
 
+    # httpx AsyncClient auto-sends cookies set by the previous response
     resp = await client.post(
         "/api/v1/courses/99999/reviews",
         json={
@@ -77,7 +76,6 @@ async def test_create_review_authenticated(client: AsyncClient) -> None:
             "content": "Really enjoyed this course",
             "ratings": {"gain": 4, "highScore": 4, "easiness": 3, "teacherStyle": 5},
         },
-        headers={"Authorization": f"Bearer {token}"},
     )
     # Auth should pass (no 401/403). May get 404/422/500 if course doesn't exist.
     assert resp.status_code not in (401, 403), (
