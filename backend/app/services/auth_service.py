@@ -161,7 +161,7 @@ class AuthService:
 
         # Preserve remember_me semantics: if old token had >1 day expiry, keep it
         days_remaining = (record.expires_at - datetime.now(timezone.utc)).days
-        remember_me = days_remaining > _settings.refresh_token_expire_days
+        remember_me = days_remaining >= _settings.refresh_token_remember_me_expire_days
 
         return await self._issue_tokens(db, user, remember_me=remember_me)
 
