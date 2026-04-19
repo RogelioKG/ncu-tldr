@@ -8,12 +8,6 @@ export interface AuthUser {
   emailVerified: boolean
 }
 
-export interface AuthResult {
-  accessToken: string
-  tokenType: string
-  user: AuthUser
-}
-
 export interface MessageResponse {
   message: string
 }
@@ -24,12 +18,14 @@ export interface LoginPayload {
   rememberMe?: boolean
 }
 
-export interface RegisterPayload extends LoginPayload {
+export interface RegisterPayload {
+  email: string
+  password: string
   displayName: string
 }
 
-export async function login(payload: LoginPayload): Promise<AuthResult> {
-  return await request<AuthResult>('/api/v1/auth/login', {
+export async function login(payload: LoginPayload): Promise<AuthUser> {
+  return await request<AuthUser>('/api/v1/auth/login', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
@@ -49,6 +45,10 @@ export async function resendVerification(email: string): Promise<MessageResponse
   })
 }
 
-export async function getMe(token: string): Promise<AuthUser> {
-  return await request<AuthUser>('/api/v1/auth/me', { token })
+export async function getMe(): Promise<AuthUser> {
+  return await request<AuthUser>('/api/v1/auth/me')
+}
+
+export async function logoutApi(): Promise<void> {
+  await request<MessageResponse>('/api/v1/auth/logout', { method: 'POST' })
 }

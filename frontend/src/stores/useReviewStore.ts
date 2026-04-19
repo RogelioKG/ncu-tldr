@@ -29,11 +29,10 @@ export const useReviewStore = defineStore('review', () => {
 
   async function submitReview(courseId: number, payload: SubmitReviewInput): Promise<CourseComment> {
     const authStore = useAuthStore()
-    const token = authStore.token
-    if (!token)
+    if (!authStore.isLoggedIn)
       throw new Error('登入後才能提交評價')
 
-    const created = await createReview(courseId, payload, token)
+    const created = await createReview(courseId, payload)
     const current = reviewsByCourse.value[courseId] ?? []
     reviewsByCourse.value = {
       ...reviewsByCourse.value,
@@ -60,19 +59,17 @@ export const useReviewStore = defineStore('review', () => {
             },
       ),
     }
-    const authStore = useAuthStore()
-    await reactToReview(courseId, reviewId, reaction, authStore.token ?? undefined)
+    await reactToReview(courseId, reviewId, reaction)
   }
 
   async function fetchMyReviews(): Promise<void> {
     const authStore = useAuthStore()
-    const token = authStore.token
-    if (!token)
+    if (!authStore.isLoggedIn)
       throw new Error('請先登入')
 
     isLoading.value = true
     try {
-      myReviews.value = await getMyReviews(token)
+      myReviews.value = await getMyReviews()
     }
     finally {
       isLoading.value = false
@@ -81,11 +78,10 @@ export const useReviewStore = defineStore('review', () => {
 
   async function removeReview(courseId: number, reviewId: number): Promise<void> {
     const authStore = useAuthStore()
-    const token = authStore.token
-    if (!token)
+    if (!authStore.isLoggedIn)
       throw new Error('登入後才能刪除評價')
 
-    await deleteReview(courseId, reviewId, token)
+    await deleteReview(courseId, reviewId)
 
     const current = reviewsByCourse.value[courseId] ?? []
     reviewsByCourse.value = {

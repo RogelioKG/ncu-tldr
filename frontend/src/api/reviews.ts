@@ -55,15 +55,14 @@ export async function getReviews(courseId: number): Promise<CourseComment[]> {
   return raw.map(normalizeReview)
 }
 
-export async function getMyReviews(token: string): Promise<CourseComment[]> {
-  const raw = await request<RawReview[]>('/api/v1/auth/me/reviews', { token })
+export async function getMyReviews(): Promise<CourseComment[]> {
+  const raw = await request<RawReview[]>('/api/v1/auth/me/reviews')
   return raw.map(normalizeReview)
 }
 
 export async function createReview(
   courseId: number,
   payload: SubmitReviewInput,
-  token: string,
 ): Promise<CourseComment> {
   const raw = await request<RawReview>(`/api/v1/courses/${courseId}/reviews`, {
     method: 'POST',
@@ -75,7 +74,6 @@ export async function createReview(
       weeklyHours: payload.weeklyHours,
       textbook: payload.textbook,
     }),
-    token,
   })
   return normalizeReview(raw)
 }
@@ -83,10 +81,8 @@ export async function createReview(
 export async function deleteReview(
   courseId: number,
   reviewId: number,
-  token: string,
 ): Promise<void> {
   await request<void>(`/api/v1/courses/${courseId}/reviews/${reviewId}`, {
     method: 'DELETE',
-    token,
   })
 }

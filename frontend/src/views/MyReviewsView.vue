@@ -9,7 +9,7 @@ const authStore = useAuthStore()
 const reviewStore = useReviewStore()
 
 onMounted(async () => {
-  if (!authStore.token) {
+  if (!authStore.isLoggedIn) {
     router.push({ name: 'login' })
     return
   }

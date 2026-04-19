@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { getMe, login, register } from '@/api/auth'
-
-const AUTH_TOKEN_KEY = 'ncu-tldr-token'
+import { getMe, login, logoutApi, register } from '@/api/auth'
 
 interface AuthUser {
   id: string
@@ -13,20 +11,16 @@ interface AuthUser {
 }
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(localStorage.getItem(AUTH_TOKEN_KEY))
   const user = ref<AuthUser | null>(null)
   const isLoading = ref(false)
 
-  const isLoggedIn = computed(() => Boolean(token.value && user.value))
+  const isLoggedIn = computed(() => user.value !== null)
   const displayName = computed(() => user.value?.displayName ?? '')
 
   async function loginWithPassword(email: string, password: string, rememberMe = false): Promise<void> {
     isLoading.value = true
     try {
-      const result = await login({ email, password, rememberMe })
-      token.value = result.accessToken
-      user.value = result.user
-      localStorage.setItem(AUTH_TOKEN_KEY, result.accessToken)
+      user.value = await login({ email, password, rememberMe })
     }
     finally {
       isLoading.value = false
@@ -48,21 +42,22 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function hydrateFromStorage(): Promise<void> {
-    if (!token.value) {
-      return
-    }
     try {
-      user.value = await getMe(token.value)
+      user.value = await getMe()
     }
     catch {
-      logout()
+      user.value = null
     }
   }
 
-  function logout(): void {
-    token.value = null
+  async function logout(): Promise<void> {
+    try {
+      await logoutApi()
+    }
+    catch {
+      // ignore — clear local state regardless
+    }
     user.value = null
-    localStorage.removeItem(AUTH_TOKEN_KEY)
   }
 
   return {
@@ -73,7 +68,6 @@ export const useAuthStore = defineStore('auth', () => {
     loginWithPassword,
     logout,
     registerWithPassword,
-    token,
     user,
   }
 })

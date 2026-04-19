@@ -31,11 +31,10 @@ export const useCommentStore = defineStore('comment', () => {
     payload: CreateCommentPayload,
   ): Promise<CourseComment> {
     const authStore = useAuthStore()
-    const token = authStore.token
-    if (!token)
+    if (!authStore.isLoggedIn)
       throw new Error('登入後才能留言')
 
-    const created = await createComment(courseId, payload, token)
+    const created = await createComment(courseId, payload)
     const current = commentsByCourse.value[courseId] ?? []
     commentsByCourse.value = {
       ...commentsByCourse.value,
@@ -58,17 +57,15 @@ export const useCommentStore = defineStore('comment', () => {
             },
       ),
     }
-    const authStore = useAuthStore()
-    await reactToComment(courseId, commentId, reaction, authStore.token ?? undefined)
+    await reactToComment(courseId, commentId, reaction)
   }
 
   async function removeComment(courseId: number, commentId: number): Promise<void> {
     const authStore = useAuthStore()
-    const token = authStore.token
-    if (!token)
+    if (!authStore.isLoggedIn)
       throw new Error('登入後才能刪除留言')
 
-    await deleteComment(courseId, commentId, token)
+    await deleteComment(courseId, commentId)
 
     const current = commentsByCourse.value[courseId] ?? []
     commentsByCourse.value = {

@@ -42,7 +42,6 @@ export async function getComments(courseId: number): Promise<CourseComment[]> {
 export async function createComment(
   courseId: number,
   payload: CreateCommentPayload,
-  token: string,
 ): Promise<CourseComment> {
   const body: { content: string, parentId?: number } = {
     content: payload.content,
@@ -53,7 +52,6 @@ export async function createComment(
   const raw = await request<RawComment>(`/api/v1/courses/${courseId}/comments`, {
     method: 'POST',
     body: JSON.stringify(body),
-    token,
   })
   return normalizeComment(raw)
 }
@@ -61,10 +59,8 @@ export async function createComment(
 export async function deleteComment(
   courseId: number,
   commentId: number,
-  token: string,
 ): Promise<void> {
   await request<void>(`/api/v1/courses/${courseId}/comments/${commentId}`, {
     method: 'DELETE',
-    token,
   })
 }
