@@ -1,7 +1,6 @@
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import Cookie, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import decode_access_token
@@ -9,17 +8,15 @@ from app.db.deps import get_db
 from app.models.user import User
 from app.repositories.user_repo import user_repo
 
-_bearer = HTTPBearer(auto_error=False)
-
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    access_token: str | None = Cookie(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    if credentials is None:
+    if access_token is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not authenticated")
     try:
-        user_id = UUID(decode_access_token(credentials.credentials))
+        user_id = UUID(decode_access_token(access_token))
     except Exception:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid or expired token")
     user = await user_repo.get_by_id(db, user_id)
@@ -29,13 +26,13 @@ async def get_current_user(
 
 
 async def get_optional_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    access_token: str | None = Cookie(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> User | None:
-    if credentials is None:
+    if access_token is None:
         return None
     try:
-        user_id = UUID(decode_access_token(credentials.credentials))
+        user_id = UUID(decode_access_token(access_token))
         return await user_repo.get_by_id(db, user_id)
     except Exception:
         return None
