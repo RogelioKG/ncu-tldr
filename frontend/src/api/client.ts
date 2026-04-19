@@ -40,7 +40,9 @@ export async function request<T>(path: string, options: RequestInit = {}, _isRet
     const refreshResponse = await doFetch('/api/v1/auth/refresh', { method: 'POST' })
     if (!refreshResponse.ok) {
       const { useAuthStore } = await import('@/stores/useAuthStore')
-      useAuthStore().logout()
+      useAuthStore().logout().catch(() => {
+        // ignore logout errors in error handler
+      })
       const { default: router } = await import('@/router')
       router.push({ name: 'login' })
       throw new ApiError('Session expired', 401)
@@ -51,7 +53,9 @@ export async function request<T>(path: string, options: RequestInit = {}, _isRet
   if (!response.ok) {
     if (response.status === 401) {
       const { useAuthStore } = await import('@/stores/useAuthStore')
-      useAuthStore().logout()
+      useAuthStore().logout().catch(() => {
+        // ignore logout errors in error handler
+      })
       const { default: router } = await import('@/router')
       router.push({ name: 'login' })
       throw new ApiError('Session expired', 401)
