@@ -1,4 +1,9 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim() || ''
+const NON_REFRESHABLE_401_PATHS = new Set([
+  '/api/v1/auth/login',
+  '/api/v1/auth/register',
+  '/api/v1/auth/refresh',
+])
 
 export class ApiError extends Error {
   constructor(
@@ -16,6 +21,13 @@ export function hasBackendApi(): boolean {
 
 export function getDataSourceLabel(): 'API' {
   return 'API'
+}
+
+function shouldAttemptRefresh(path: string, isRetry: boolean, status: number): boolean {
+  if (status !== 401 || isRetry) {
+    return false
+  }
+  return !NON_REFRESHABLE_401_PATHS.has(path)
 }
 
 async function doFetch(path: string, options: RequestInit): Promise<Response> {
@@ -36,7 +48,7 @@ export async function request<T>(path: string, options: RequestInit = {}, _isRet
 
   const response = await doFetch(path, options)
 
-  if (response.status === 401 && !_isRetry && path !== '/api/v1/auth/refresh') {
+  if (shouldAttemptRefresh(path, _isRetry, response.status)) {
     const refreshResponse = await doFetch('/api/v1/auth/refresh', { method: 'POST' })
     if (!refreshResponse.ok) {
       const { useAuthStore } = await import('@/stores/useAuthStore')
@@ -52,6 +64,19 @@ export async function request<T>(path: string, options: RequestInit = {}, _isRet
 
   if (!response.ok) {
     if (response.status === 401) {
+      if (NON_REFRESHABLE_401_PATHS.has(path)) {
+        let message = 'Unauthorized'
+        try {
+          const data = await response.json() as { detail?: string }
+          if (data.detail) {
+            message = data.detail
+          }
+        }
+        catch {
+          // ignore json parse errors
+        }
+        throw new ApiError(message, 401)
+      }
       const { useAuthStore } = await import('@/stores/useAuthStore')
       useAuthStore().logout().catch(() => {
         // ignore logout errors in error handler

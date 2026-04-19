@@ -247,6 +247,30 @@ async def test_me_returns_current_user(client: AsyncClient) -> None:
 # ── /refresh ──────────────────────────────────────────────────────────────
 
 
+async def test_refresh_without_cookie_returns_401_and_logs_non_error(
+    client: AsyncClient, caplog
+) -> None:
+    client.cookies.pop("refresh_token", None)
+
+    with caplog.at_level("INFO"):
+        resp = await client.post("/api/v1/auth/refresh")
+
+    assert resp.status_code == 401
+    assert resp.json()["detail"] == "No refresh token"
+    assert any(
+        record.name == "app.api.v1.endpoints.auth"
+        and record.levelname == "INFO"
+        and "no refresh token cookie" in record.message
+        for record in caplog.records
+    )
+    assert not any(
+        record.name == "app.db.deps"
+        and record.levelname == "ERROR"
+        and "Database transaction failed; rolling back" in record.message
+        for record in caplog.records
+    )
+
+
 async def test_refresh_issues_new_tokens(client: AsyncClient) -> None:
     captured: dict = {}
 
