@@ -1,4 +1,5 @@
 import uuid
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -6,6 +7,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
+from app.core.logging_utils import mask_email
 from app.core.security import (
     create_access_token,
     generate_refresh_token_str,
@@ -27,6 +29,7 @@ from app.schemas.auth import (
 from app.services.email_service import send_verification_email
 
 _settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -62,6 +65,11 @@ class AuthService:
         await refresh_token_repo.create(
             db, user_id=user.id, token_hash=token_hash, expires_at=expires_at
         )
+        logger.debug(
+            "Issued auth tokens for user_id=%s remember_me=%s",
+            user.id,
+            remember_me,
+        )
         return AuthTokens(
             user=self._build_user_out(user),
             access_token=access_token,
@@ -70,8 +78,13 @@ class AuthService:
         )
 
     async def register(self, db: AsyncSession, req: RegisterRequest) -> MessageResponse:
+        logger.info("Register attempt email=%s", mask_email(req.email))
         existing = await user_repo.get_by_email(db, req.email)
         if existing:
+            logger.warning(
+                "Register conflict: email already exists email=%s",
+                mask_email(req.email),
+            )
             raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
 
         user = await user_repo.create(
@@ -83,56 +96,82 @@ class AuthService:
 
         token_str = str(uuid.uuid4())
         await email_verification_token_repo.create(db, user_id=user.id, token=token_str)
+        logger.debug("Email verification token generated for user_id=%s", user.id)
 
         sent = send_verification_email(req.email, token_str)
         if not sent:
+            logger.error(
+                "Register failed due to email delivery error user_id=%s email=%s",
+                user.id,
+                mask_email(req.email),
+            )
             await db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="無法寄送驗證信，請稍後再試",
             )
+        logger.info(
+            "Register succeeded and verification email sent user_id=%s", user.id
+        )
         return MessageResponse(message="驗證信已寄出，請確認您的 NCU 學生信箱")
 
     async def verify_email(self, db: AsyncSession, token: str) -> AuthTokens:
         record = await email_verification_token_repo.get_by_token(db, token)
         if record is None:
+            logger.warning("Verify email failed: token not found")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="無效的驗證連結"
             )
         if record.used_at is not None:
+            logger.warning(
+                "Verify email failed: token already used user_id=%s", record.user_id
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="驗證連結已使用過"
             )
         if datetime.now(timezone.utc) > record.expires_at:
+            logger.warning(
+                "Verify email failed: token expired user_id=%s", record.user_id
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="驗證連結已過期"
             )
 
         user = await user_repo.get_by_id(db, record.user_id)
         if user is None:
+            logger.error(
+                "Verify email failed: user not found user_id=%s", record.user_id
+            )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="使用者不存在"
             )
 
         await email_verification_token_repo.mark_used(db, record)
+        logger.debug("Verification token marked used user_id=%s", user.id)
 
         if not user.email_verified:
             user.email_verified = True
             await db.flush()
+            logger.info("User email verified user_id=%s", user.id)
 
         return await self._issue_tokens(db, user)
 
     async def login(self, db: AsyncSession, req: LoginRequest) -> AuthTokens:
         user = await user_repo.get_by_email(db, req.email)
         if not user or not verify_password(req.password, user.hashed_password):
+            logger.info(
+                "Login failed: invalid credentials email=%s", mask_email(req.email)
+            )
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED, "Invalid email or password"
             )
         if not user.email_verified:
+            logger.warning("Login blocked: email not verified user_id=%s", user.id)
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="請先驗證您的電子信箱",
             )
+        logger.info("Login succeeded user_id=%s", user.id)
         return await self._issue_tokens(db, user, remember_me=req.remember_me)
 
     async def refresh(self, db: AsyncSession, raw_refresh_token: str) -> AuthTokens:
@@ -140,20 +179,24 @@ class AuthService:
         record = await refresh_token_repo.get_by_hash(db, token_hash)
 
         if record is None:
+            logger.warning("Refresh failed: token not found")
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid refresh token")
 
         if record.revoked_at is not None:
             # Token was already used — possible theft. Revoke all tokens for this user.
+            logger.error("Refresh token reuse detected user_id=%s", record.user_id)
             await refresh_token_repo.revoke_all_for_user(db, record.user_id)
             raise HTTPException(
                 status.HTTP_401_UNAUTHORIZED, "Refresh token reuse detected"
             )
 
         if datetime.now(timezone.utc) > record.expires_at:
+            logger.warning("Refresh failed: token expired user_id=%s", record.user_id)
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh token expired")
 
         user = await user_repo.get_by_id(db, record.user_id)
         if user is None:
+            logger.error("Refresh failed: user not found user_id=%s", record.user_id)
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not found")
 
         # Rotate: revoke old token, issue new one
@@ -163,15 +206,20 @@ class AuthService:
         days_remaining = (record.expires_at - datetime.now(timezone.utc)).days
         remember_me = days_remaining >= _settings.refresh_token_remember_me_expire_days
 
+        logger.info("Refresh succeeded user_id=%s", user.id)
         return await self._issue_tokens(db, user, remember_me=remember_me)
 
     async def logout(self, db: AsyncSession, raw_refresh_token: str | None) -> None:
         if raw_refresh_token is None:
+            logger.debug("Logout called without refresh token")
             return
         token_hash = hash_token(raw_refresh_token)
         record = await refresh_token_repo.get_by_hash(db, token_hash)
         if record and record.revoked_at is None:
             await refresh_token_repo.revoke(db, record)
+            logger.info("Logout succeeded and token revoked user_id=%s", record.user_id)
+        else:
+            logger.debug("Logout token not found or already revoked")
 
     async def resend_verification(
         self, db: AsyncSession, req: ResendVerificationRequest
@@ -183,6 +231,12 @@ class AuthService:
                 db, user_id=user.id, token=token_str
             )
             send_verification_email(user.email, token_str)
+            logger.info("Resent verification email user_id=%s", user.id)
+        else:
+            logger.debug(
+                "Resend verification skipped for email=%s",
+                mask_email(str(req.email)),
+            )
         return MessageResponse(message="若此信箱已註冊且尚未驗證，驗證信已重新寄出")
 
 

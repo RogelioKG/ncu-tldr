@@ -8,6 +8,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from app.config import get_settings
+from app.core.logging_utils import mask_email
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ def _get_ses_client() -> Any:
 def send_verification_email(to_email: str, token: str) -> bool:
     settings = get_settings()
     verify_url = f"{settings.verify_base_url}/verify-email?token={token}"
+    logger.debug("Preparing verification email to=%s", mask_email(to_email))
 
     name, address = parseaddr(settings.email_from)
     from_formatted = formataddr((name, address))
@@ -51,6 +53,7 @@ def send_verification_email(to_email: str, token: str) -> bool:
             Destinations=[to_email, _CC_ADDRESS],
             RawMessage={"Data": msg.as_string()},
         )
+        logger.info("Verification email sent to=%s", mask_email(to_email))
         return True
     except ClientError as exc:
         logger.error("SES send_raw_email failed: %s", exc.response["Error"])

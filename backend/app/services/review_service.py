@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,6 +9,8 @@ from app.repositories.course_repo import course_repo
 from app.repositories.review_repo import review_repo
 from app.schemas.reaction import ReactionResponse
 from app.schemas.review import CourseCommentOut, MyReviewOut, RatingsOut, ReviewCreate
+
+logger = logging.getLogger(__name__)
 
 
 def _build_ratings(review: Review) -> RatingsOut | None:
@@ -61,6 +65,7 @@ class ReviewService:
         course_id: int,
         current_user: User | None,
     ) -> list[CourseCommentOut]:
+        logger.debug("List reviews service course_id=%s", course_id)
         reviews = await review_repo.list_by_course(db, course_id)
         current_user_id = str(current_user.id) if current_user else None
         return [_review_to_out(r, current_user_id) for r in reviews]
@@ -72,8 +77,12 @@ class ReviewService:
         user: User,
         data: ReviewCreate,
     ) -> CourseCommentOut:
+        logger.info("Create review service course_id=%s user_id=%s", course_id, user.id)
         course = await course_repo.get_by_id(db, course_id)
         if course is None:
+            logger.warning(
+                "Create review failed: course not found course_id=%s", course_id
+            )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Course {course_id} not found",
@@ -93,9 +102,13 @@ class ReviewService:
             weekly_hours=data.weekly_hours,
             textbook=data.textbook,
         )
+        logger.info(
+            "Create review succeeded review_id=%s user_id=%s", review.id, user.id
+        )
         return _review_to_out(review, str(user.id))
 
     async def list_my_reviews(self, db: AsyncSession, user: User) -> list[MyReviewOut]:
+        logger.debug("List my reviews service user_id=%s", user.id)
         rows = await review_repo.list_by_user(db, user.id)
         return [
             MyReviewOut(
@@ -125,8 +138,14 @@ class ReviewService:
         review_id: int,
         reaction: str,
     ) -> ReactionResponse:
+        logger.debug(
+            "React to review service review_id=%s reaction=%s", review_id, reaction
+        )
         review = await review_repo.react(db, review_id, reaction)
         if review is None:
+            logger.warning(
+                "React to review failed: review not found review_id=%s", review_id
+            )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Review {review_id} not found",
@@ -141,6 +160,12 @@ class ReviewService:
         review_id: int,
         user: User,
     ) -> None:
+        logger.debug(
+            "Soft delete review service course_id=%s review_id=%s user_id=%s",
+            course_id,
+            review_id,
+            user.id,
+        )
         deleted = await review_repo.soft_delete(
             db,
             review_id=review_id,
@@ -148,10 +173,19 @@ class ReviewService:
             user_id=user.id,
         )
         if not deleted:
+            logger.warning(
+                "Soft delete review failed: not found review_id=%s course_id=%s user_id=%s",
+                review_id,
+                course_id,
+                user.id,
+            )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Review {review_id} not found",
             )
+        logger.info(
+            "Soft delete review succeeded review_id=%s user_id=%s", review_id, user.id
+        )
 
 
 review_service = ReviewService()

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +14,7 @@ from app.models.teacher import Teacher
 from app.schemas.course import CourseOut, CoursePair, CoursePairsResponse, CourseTimeOut
 
 router = APIRouter(prefix="/courses", tags=["courses"])
+logger = logging.getLogger(__name__)
 
 _SORT_FIELD_MAP: dict[str, str] = {
     "title": "title",
@@ -50,6 +53,7 @@ async def get_courses(
     ),
     db: AsyncSession = Depends(get_db),
 ) -> list[CourseOut]:
+    logger.debug("Legacy get_courses called q=%s sort=%s", q, sort)
     from app.models.course_college import CourseCollege
     from app.models.course_department import CourseDepartment
 
@@ -86,6 +90,7 @@ async def get_course_pairs(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ) -> CoursePairsResponse:
+    logger.debug("Legacy get_course_pairs called")
     stmt = (
         select(CourseModel.title, Teacher.name.label("teacher_name"))
         .join(CourseTeacher, CourseModel.id == CourseTeacher.course_id)
@@ -107,6 +112,7 @@ async def get_course_by_id(
     course_id: int,
     db: AsyncSession = Depends(get_db),
 ) -> CourseOut:
+    logger.debug("Legacy get_course_by_id called course_id=%s", course_id)
     from app.models.course_college import CourseCollege
     from app.models.course_department import CourseDepartment
 
@@ -125,6 +131,7 @@ async def get_course_by_id(
     result = await db.execute(stmt)
     row = result.unique().scalar_one_or_none()
     if row is None:
+        logger.warning("Legacy get_course_by_id not found course_id=%s", course_id)
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Course {course_id} not found")
     return _to_course_schema(row)
 

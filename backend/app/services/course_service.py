@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +12,8 @@ from app.schemas.course import (
     RatingsOut,
     SummaryOut,
 )
+
+logger = logging.getLogger(__name__)
 
 _DAY_MAP = {1: "一", 2: "二", 3: "三", 4: "四", 5: "五", 6: "六", 7: "日"}
 
@@ -124,6 +128,12 @@ class CourseService:
         sort: str | None = None,
         slots: list[str] | None = None,
     ) -> list[CourseOut]:
+        logger.debug(
+            "List courses service q=%s sort=%s slots_count=%s",
+            q,
+            sort,
+            len(slots or []),
+        )
         sort_field, sort_dir = _parse_sort(sort)
         parsed_slots = _parse_slots(slots) if slots else []
         rows = await course_repo.list_courses(
@@ -132,8 +142,10 @@ class CourseService:
         return [_to_course_out(row) for row in rows]
 
     async def get_course(self, db: AsyncSession, course_id: int) -> CourseOut:
+        logger.debug("Get course service course_id=%s", course_id)
         course = await course_repo.get_by_id(db, course_id)
         if course is None:
+            logger.warning("Get course failed: not found course_id=%s", course_id)
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Course not found")
         avg_ratings = await course_repo.get_avg_ratings(db, course_id)
         review_count = await course_repo.get_review_count(db, course_id)
@@ -145,9 +157,11 @@ class CourseService:
             avg_ratings["teacher_style"],
             review_count,
         )
+        logger.debug("Get course succeeded course_id=%s", course_id)
         return _to_course_out(row, include_summary=True)
 
     async def get_pairs(self, db: AsyncSession) -> CoursePairsResponse:
+        logger.debug("Get course pairs service")
         pairs = await course_repo.get_pairs(db)
         return CoursePairsResponse(
             pairs=[

@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,6 +9,8 @@ from app.repositories.comment_repo import comment_repo
 from app.schemas.comment import CommentCreate
 from app.schemas.reaction import ReactionResponse
 from app.schemas.review import CourseCommentOut
+
+logger = logging.getLogger(__name__)
 
 
 def _comment_to_out(
@@ -47,6 +51,7 @@ class CommentService:
         course_id: int,
         current_user: User | None,
     ) -> list[CourseCommentOut]:
+        logger.debug("List comments service course_id=%s", course_id)
         comments = await comment_repo.list_by_course(db, course_id)
         current_user_id = str(current_user.id) if current_user else None
         return [_comment_to_out(c, current_user_id) for c in comments]
@@ -58,6 +63,9 @@ class CommentService:
         user: User,
         data: CommentCreate,
     ) -> CourseCommentOut:
+        logger.info(
+            "Create comment service course_id=%s user_id=%s", course_id, user.id
+        )
         if data.parent_id is not None:
             parent = await comment_repo.get_active_by_id(
                 db,
@@ -65,6 +73,11 @@ class CommentService:
                 comment_id=data.parent_id,
             )
             if parent is None:
+                logger.warning(
+                    "Create comment failed: parent not found course_id=%s parent_id=%s",
+                    course_id,
+                    data.parent_id,
+                )
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Comment {data.parent_id} not found",
@@ -77,6 +90,9 @@ class CommentService:
             parent_id=data.parent_id,
             content=data.content,
         )
+        logger.info(
+            "Create comment succeeded comment_id=%s user_id=%s", comment.id, user.id
+        )
         return _comment_to_out(comment, str(user.id))
 
     async def react_to_comment(
@@ -85,8 +101,14 @@ class CommentService:
         comment_id: int,
         reaction: str,
     ) -> ReactionResponse:
+        logger.debug(
+            "React to comment service comment_id=%s reaction=%s", comment_id, reaction
+        )
         comment = await comment_repo.react(db, comment_id, reaction)
         if comment is None:
+            logger.warning(
+                "React to comment failed: comment not found comment_id=%s", comment_id
+            )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Comment {comment_id} not found",
@@ -101,6 +123,12 @@ class CommentService:
         comment_id: int,
         user: User,
     ) -> None:
+        logger.debug(
+            "Soft delete comment service course_id=%s comment_id=%s user_id=%s",
+            course_id,
+            comment_id,
+            user.id,
+        )
         deleted = await comment_repo.soft_delete(
             db,
             comment_id=comment_id,
@@ -108,10 +136,21 @@ class CommentService:
             user_id=user.id,
         )
         if not deleted:
+            logger.warning(
+                "Soft delete comment failed: not found comment_id=%s course_id=%s user_id=%s",
+                comment_id,
+                course_id,
+                user.id,
+            )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Comment {comment_id} not found",
             )
+        logger.info(
+            "Soft delete comment succeeded comment_id=%s user_id=%s",
+            comment_id,
+            user.id,
+        )
 
 
 comment_service = CommentService()

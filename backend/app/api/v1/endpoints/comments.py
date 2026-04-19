@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,6 +12,7 @@ from app.schemas.review import CourseCommentOut
 from app.services.comment_service import comment_service
 
 router = APIRouter(tags=["comments"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/{course_id}/comments", response_model=list[CourseCommentOut])
@@ -18,6 +21,7 @@ async def list_comments(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_optional_user),
 ):
+    logger.debug("List comments endpoint course_id=%s", course_id)
     return await comment_service.list_comments(db, course_id, current_user)
 
 
@@ -28,6 +32,9 @@ async def create_comment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    logger.debug(
+        "Create comment endpoint course_id=%s user_id=%s", course_id, current_user.id
+    )
     return await comment_service.create_comment(db, course_id, current_user, data)
 
 
@@ -40,6 +47,9 @@ async def react_to_comment(
     data: ReactionRequest,
     db: AsyncSession = Depends(get_db),
 ):
+    logger.debug(
+        "React comment endpoint course_id=%s comment_id=%s", course_id, comment_id
+    )
     return await comment_service.react_to_comment(db, comment_id, data.reaction)
 
 
@@ -53,6 +63,12 @@ async def delete_comment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    logger.debug(
+        "Delete comment endpoint course_id=%s comment_id=%s user_id=%s",
+        course_id,
+        comment_id,
+        current_user.id,
+    )
     await comment_service.soft_delete_comment(
         db,
         course_id=course_id,

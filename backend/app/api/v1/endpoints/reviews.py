@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +11,7 @@ from app.schemas.review import CourseCommentOut, ReviewCreate
 from app.services.review_service import review_service
 
 router = APIRouter(tags=["reviews"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/{course_id}/reviews", response_model=list[CourseCommentOut])
@@ -17,6 +20,7 @@ async def list_reviews(
     db: AsyncSession = Depends(get_db),
     current_user: User | None = Depends(get_optional_user),
 ):
+    logger.debug("List reviews endpoint course_id=%s", course_id)
     return await review_service.list_reviews(db, course_id, current_user)
 
 
@@ -27,6 +31,9 @@ async def create_review(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    logger.debug(
+        "Create review endpoint course_id=%s user_id=%s", course_id, current_user.id
+    )
     return await review_service.create_review(db, course_id, current_user, data)
 
 
@@ -37,6 +44,9 @@ async def react_to_review(
     data: ReactionRequest,
     db: AsyncSession = Depends(get_db),
 ):
+    logger.debug(
+        "React review endpoint course_id=%s review_id=%s", course_id, review_id
+    )
     return await review_service.react_to_review(db, review_id, data.reaction)
 
 
@@ -49,6 +59,12 @@ async def delete_review(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    logger.debug(
+        "Delete review endpoint course_id=%s review_id=%s user_id=%s",
+        course_id,
+        review_id,
+        current_user.id,
+    )
     await review_service.soft_delete_review(
         db,
         course_id=course_id,

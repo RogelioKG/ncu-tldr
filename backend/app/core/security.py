@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -11,14 +12,23 @@ _settings = get_settings()
 _SECRET_KEY: str = _settings.jwt_secret_key
 _ALGORITHM = "HS256"
 _ACCESS_TOKEN_EXPIRE_MINUTES = _settings.access_token_expire_minutes
+logger = logging.getLogger(__name__)
 
 
 def hash_password(plain: str) -> str:
-    return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
+    try:
+        return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
+    except Exception:
+        logger.exception("Failed to hash password")
+        raise
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return bcrypt.checkpw(plain.encode(), hashed.encode())
+    try:
+        return bcrypt.checkpw(plain.encode(), hashed.encode())
+    except Exception:
+        logger.exception("Failed to verify password hash")
+        raise
 
 
 def create_access_token(sub: str) -> str:
@@ -30,8 +40,12 @@ def create_access_token(sub: str) -> str:
 
 
 def decode_access_token(token: str) -> str:
-    payload = jwt.decode(token, _SECRET_KEY, algorithms=[_ALGORITHM])
-    return str(payload["sub"])
+    try:
+        payload = jwt.decode(token, _SECRET_KEY, algorithms=[_ALGORITHM])
+        return str(payload["sub"])
+    except Exception:
+        logger.warning("Access token decode failed")
+        raise
 
 
 def generate_refresh_token_str() -> str:

@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     app_name: str = Field(default="NCU-TLDR Backend")
     app_version: str = Field(default="0.1.0")
+    log_level: str = Field(default="INFO")
     cors_origins: list[str] = Field(
         default=["http://localhost:5173", "http://127.0.0.1:5173"],
     )

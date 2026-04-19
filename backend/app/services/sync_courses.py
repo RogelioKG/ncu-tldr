@@ -1,7 +1,8 @@
-import sys
+import logging
 from typing import Any, Iterable
 
 _VALID_COURSE_TYPES = frozenset({"REQUIRED", "ELECTIVE"})
+logger = logging.getLogger(__name__)
 
 
 def _sql_text(value: Any) -> str:
@@ -55,6 +56,12 @@ def generate_course_sync_sql(raw: dict) -> list[str]:
     teachers = sorted(teachers_set)
 
     sql_statements: list[str] = []
+    logger.info(
+        "Generate course sync SQL colleges=%s departments=%s courses=%s",
+        len(colleges),
+        len(departments),
+        len(courses),
+    )
 
     # M1: colleges
     college_rows = [
@@ -135,7 +142,7 @@ def generate_course_sync_sql(raw: dict) -> list[str]:
 
     if errors:
         for e in errors:
-            print(f"ERROR: {e}", file=sys.stderr)
+            logger.error("Sync course validation error: %s", e)
         raise ValueError(f"{len(errors)} validation error(s) found. Aborting.")
 
     if course_rows:
@@ -250,4 +257,5 @@ def generate_course_sync_sql(raw: dict) -> list[str]:
             "  version = EXCLUDED.version,\n  last_update_time = EXCLUDED.last_update_time;\n"
         )
 
+    logger.info("Generated %s SQL statements for course sync", len(sql_statements))
     return sql_statements

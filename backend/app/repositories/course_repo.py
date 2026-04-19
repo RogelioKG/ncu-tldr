@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy import Float, cast, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,6 +10,8 @@ from app.models.course_teacher import CourseTeacher
 from app.models.course_time import CourseTime
 from app.models.review import Review
 from app.models.teacher import Teacher
+
+logger = logging.getLogger(__name__)
 
 
 class CourseRepository:
@@ -33,8 +37,16 @@ class CourseRepository:
         sort_dir: str = "desc",
         slots: list[tuple[int, str]] | None = None,
     ) -> list[tuple]:
+        logger.debug(
+            "List courses q=%s sort_field=%s sort_dir=%s slots_count=%s",
+            q,
+            sort_field,
+            sort_dir,
+            len(slots or []),
+        )
         if sort_dir not in ("asc", "desc"):
             sort_dir = "desc"
+            logger.warning("Invalid sort_dir provided; fallback to desc")
         ratings_sq = self._ratings_subquery()
 
         stmt = (
@@ -111,6 +123,7 @@ class CourseRepository:
         return list(result.all())
 
     async def get_by_id(self, db: AsyncSession, course_id: int) -> Course | None:
+        logger.debug("Get course by id course_id=%s", course_id)
         result = await db.execute(
             select(Course)
             .where(Course.id == course_id)
@@ -127,6 +140,7 @@ class CourseRepository:
         return result.scalars().first()
 
     async def get_pairs(self, db: AsyncSession) -> list:
+        logger.debug("Get course-teacher pairs")
         result = await db.execute(
             select(
                 Course.title,
@@ -141,12 +155,14 @@ class CourseRepository:
         return result.all()
 
     async def get_review_count(self, db: AsyncSession, course_id: int) -> int:
+        logger.debug("Get review count course_id=%s", course_id)
         result = await db.execute(
             select(func.count(Review.id)).where(Review.course_id == course_id)
         )
         return result.scalar_one()
 
     async def get_avg_ratings(self, db: AsyncSession, course_id: int) -> dict:
+        logger.debug("Get average ratings course_id=%s", course_id)
         result = await db.execute(
             select(
                 func.avg(Review.gain).label("avg_gain"),

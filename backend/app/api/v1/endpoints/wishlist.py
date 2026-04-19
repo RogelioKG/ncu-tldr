@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,6 +10,7 @@ from app.schemas.wishlist import WishCourseOut
 from app.services.wishlist_service import wishlist_service
 
 router = APIRouter(tags=["wishlist"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("", response_model=list[WishCourseOut])
@@ -16,6 +19,7 @@ async def list_wishlist(
     current_user: User | None = Depends(get_optional_user),
 ):
     user_id = current_user.id if current_user is not None else None
+    logger.debug("List wishlist endpoint user_id=%s", user_id)
     return await wishlist_service.list_wishes(db, user_id=user_id)
 
 
@@ -25,6 +29,9 @@ async def vote_for_course(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    logger.debug(
+        "Vote wishlist endpoint course_id=%s user_id=%s", course_id, current_user.id
+    )
     await wishlist_service.add_vote(db, course_id=course_id, user_id=current_user.id)
     return Response(status_code=204)
 
@@ -35,5 +42,8 @@ async def unvote_course(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    logger.debug(
+        "Unvote wishlist endpoint course_id=%s user_id=%s", course_id, current_user.id
+    )
     await wishlist_service.remove_vote(db, course_id=course_id, user_id=current_user.id)
     return Response(status_code=204)
