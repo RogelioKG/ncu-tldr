@@ -6,6 +6,7 @@ vi.mock('@/api/auth', () => ({
   login: vi.fn(),
   register: vi.fn(),
   getMe: vi.fn(),
+  logoutApi: vi.fn(),
 }))
 
 describe('useAuthStore', () => {
@@ -14,33 +15,29 @@ describe('useAuthStore', () => {
     setActivePinia(createPinia())
   })
 
-  it('logs in and stores token', async () => {
+  it('logs in and sets user', async () => {
     const { login } = await import('@/api/auth')
     vi.mocked(login).mockResolvedValueOnce({
-      accessToken: 'mock-token',
-      tokenType: 'bearer',
-      user: {
-        id: '1',
-        email: 'demo@cc.ncu.edu.tw',
-        displayName: 'Demo',
-        isActive: true,
-      },
+      id: '1',
+      email: 'demo@cc.ncu.edu.tw',
+      displayName: 'Demo',
+      isActive: true,
+      emailVerified: true,
     })
 
     const store = useAuthStore()
     await store.loginWithPassword('demo@cc.ncu.edu.tw', 'password123')
     expect(store.isLoggedIn).toBe(true)
-    expect(localStorage.getItem('ncu-tldr-token')).toBe('mock-token')
+    expect(store.user?.email).toBe('demo@cc.ncu.edu.tw')
   })
 
-  it('hydrates and logs out when token invalid', async () => {
+  it('hydrates and logs out when getMe fails', async () => {
     const { getMe } = await import('@/api/auth')
-    vi.mocked(getMe).mockRejectedValueOnce(new Error('Invalid token'))
-    localStorage.setItem('ncu-tldr-token', 'bad-token')
+    vi.mocked(getMe).mockRejectedValueOnce(new Error('Invalid session'))
 
     const store = useAuthStore()
     await store.hydrateFromStorage()
     expect(store.isLoggedIn).toBe(false)
-    expect(store.token).toBeNull()
+    expect(store.user).toBeNull()
   })
 })
