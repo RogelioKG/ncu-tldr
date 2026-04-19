@@ -39,5 +39,22 @@ describe('useAuthStore', () => {
     await store.hydrateFromStorage()
     expect(store.isLoggedIn).toBe(false)
     expect(store.user).toBeNull()
+    expect(store.isInitialized).toBe(true)
+  })
+
+  it('hydration is idempotent — second call is a no-op', async () => {
+    const { getMe } = await import('@/api/auth')
+    vi.mocked(getMe).mockResolvedValue({
+      id: '1',
+      email: 'demo@cc.ncu.edu.tw',
+      displayName: 'Demo',
+      isActive: true,
+      emailVerified: true,
+    })
+
+    const store = useAuthStore()
+    await store.hydrateFromStorage()
+    await store.hydrateFromStorage()
+    expect(vi.mocked(getMe)).toHaveBeenCalledTimes(1)
   })
 })

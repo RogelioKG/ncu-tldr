@@ -75,6 +75,8 @@ router.beforeEach(async (to) => {
   const { useAuthStore } = await import('@/stores/useAuthStore')
   const auth = useAuthStore()
 
+  await auth.hydrateFromStorage()
+
   if (!auth.isLoggedIn)
     return { name: 'login', query: { redirect: to.fullPath } }
 
