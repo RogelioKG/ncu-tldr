@@ -117,10 +117,4 @@ async def my_reviews(
 
 @router.get("/me", response_model=UserOut)
 async def me(current_user: User = Depends(get_current_user)):
-    return UserOut(
-        id=str(current_user.id),
-        email=current_user.email,
-        display_name=current_user.display_name,
-        is_active=current_user.is_active,
-        email_verified=current_user.email_verified,
-    )
+    return UserOut.model_validate(current_user)
