@@ -27,7 +27,7 @@ const showErrorToast = ref(false)
 const showCourseDropdown = ref(false)
 const showTeacherDropdown = ref(false)
 const dialogRef = ref<HTMLElement | null>(null)
-const { activate, deactivate } = useFocusTrap(dialogRef)
+const { activate, deactivate } = useFocusTrap(dialogRef, { allowOutsideClick: true })
 
 onMounted(async () => {
   await pairsStore.fetchPairs()

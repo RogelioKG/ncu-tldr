@@ -22,10 +22,10 @@ export async function getWishlist(): Promise<WishCourse[]> {
   return data.map(toWishCourse)
 }
 
-export async function voteForCourse(courseId: number, token: string): Promise<void> {
-  await request<void>(`/api/v1/wishlist/${courseId}`, { method: 'POST', token })
+export async function voteForCourse(courseId: number): Promise<void> {
+  await request<void>(`/api/v1/wishlist/${courseId}`, { method: 'POST' })
 }
 
-export async function unvoteForCourse(courseId: number, token: string): Promise<void> {
-  await request<void>(`/api/v1/wishlist/${courseId}`, { method: 'DELETE', token })
+export async function unvoteForCourse(courseId: number): Promise<void> {
+  await request<void>(`/api/v1/wishlist/${courseId}`, { method: 'DELETE' })
 }
