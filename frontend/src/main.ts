@@ -8,9 +8,9 @@ import './style.css'
 const app = createApp(App)
 const pinia = createPinia()
 
-app
-  .use(pinia)
-  .use(router)
-  .mount('#app')
+app.use(pinia).use(router)
 
-useAuthStore().hydrateFromStorage()
+const auth = useAuthStore()
+auth.hydrateFromStorage().finally(() => {
+  app.mount('#app')
+})
