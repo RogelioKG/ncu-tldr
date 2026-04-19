@@ -54,9 +54,9 @@ function handleLogout() {
   showLogoutConfirm.value = true
 }
 
-function confirmLogout() {
+async function confirmLogout() {
   showLogoutConfirm.value = false
-  authStore.logout()
+  await authStore.logout()
 }
 
 function closeMenu() {
