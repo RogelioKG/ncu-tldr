@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { resendVerification } from '@/api/auth'
 import { ApiError } from '@/api/client'
@@ -88,6 +88,7 @@ async function handleSubmit() {
 
   try {
     await authStore.loginWithPassword(form.email, form.password, rememberMe.value)
+    await nextTick()
     router.push('/')
   }
   catch (err) {
