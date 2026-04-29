@@ -44,9 +44,7 @@ class Review(Base):
     )
     weekly_hours: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     textbook: Mapped[str | None] = mapped_column(Text, nullable=True)
-    is_deleted: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default=sa.text("false")
-    )
+    is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     deleted_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
