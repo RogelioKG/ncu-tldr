@@ -43,6 +43,12 @@ async function handleDeleteComment(payload: { commentId: number }) {
   await commentStore.removeComment(courseId.value, payload.commentId)
 }
 
+async function handleSubmitComment(payload: { content: string }) {
+  if (Number.isNaN(courseId.value))
+    return
+  await commentStore.addReply(courseId.value, { content: payload.content })
+}
+
 async function handleSubmitReview(payload: {
   semester: string
   title: string
@@ -94,6 +100,7 @@ onMounted(loadData)
         @reply="handleReply"
         @delete-comment="handleDeleteComment"
         @submit-review="handleSubmitReview"
+        @submit-comment="handleSubmitComment"
       />
     </div>
     <div v-else class="not-found">

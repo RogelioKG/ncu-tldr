@@ -20,6 +20,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   reply: [{ parentId: number, content: string }]
   deleteComment: [{ commentId: number }]
+  submitComment: [{ content: string }]
   submitReview: [
     payload: {
       semester: string
@@ -65,6 +66,10 @@ function handleReply(payload: { parentId: number, content: string }) {
 
 function handleDeleteComment(payload: { commentId: number }) {
   emit('deleteComment', payload)
+}
+
+function handleSubmitComment(payload: { content: string }) {
+  emit('submitComment', payload)
 }
 
 function handleSubmitReview(payload: {
@@ -148,6 +153,7 @@ function handleSubmitReview(payload: {
             :comments="comments ?? []"
             @reply="handleReply"
             @delete-comment="handleDeleteComment"
+            @submit-comment="handleSubmitComment"
           />
         </div>
       </div>

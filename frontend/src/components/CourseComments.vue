@@ -10,6 +10,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   reply: [{ parentId: number, content: string }]
   deleteComment: [{ commentId: number }]
+  submitComment: [{ content: string }]
 }>()
 
 type SortMode = 'date' | 'popular'
@@ -37,7 +38,7 @@ const commentTree = computed(() =>
 function submitComment() {
   if (!newComment.value.trim())
     return
-  // TODO: 接 API 送出根留言
+  emit('submitComment', { content: newComment.value.trim() })
   newComment.value = ''
 }
 
