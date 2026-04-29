@@ -28,6 +28,9 @@ const replyInput = ref('')
 const expandedRoots = ref<Set<number>>(new Set())
 
 function toggleReplies(rootId: number) {
+  const collapsing = isExpanded(rootId)
+  if (collapsing && replyingToRootId.value === rootId)
+    cancelReply()
   const next = new Set(expandedRoots.value)
   if (next.has(rootId))
     next.delete(rootId)
@@ -179,57 +182,14 @@ function formatDate(isoString: string): string {
             {{ isExpanded(group.root.comment.id) ? '收起所有回覆' : `展開所有回覆（${group.descendants.length}）` }}
           </button>
         </li>
-        <!-- 所有子孫留言（深度 >= 1） -->
+        <!-- 回覆根留言的輸入框（緊接於根留言下方） -->
         <li
-          v-for="node in group.descendants"
-          v-show="isExpanded(group.root.comment.id)"
-          :key="node.comment.id"
-          class="comments__item comments__item--reply"
-          :style="{ '--depth': node.depth }"
-        >
-          <div class="comments__item-top">
-            <div class="comments__user-row">
-              <span class="comments__avatar">👤</span>
-              <span class="comments__user">{{ displayUserLabel(node.comment) }}</span>
-            </div>
-            <span class="comments__date">({{ formatDate(node.comment.date) }})</span>
-          </div>
-          <p class="comments__content">
-            {{ node.comment.content }}
-          </p>
-          <div v-if="!node.comment.isDeleted" class="comments__actions">
-            <button type="button" class="comments__vote-btn" aria-label="按讚">
-              👍 <span v-if="node.comment.likes">{{ node.comment.likes }}</span>
-            </button>
-            <button type="button" class="comments__vote-btn" aria-label="倒讚">
-              👎 <span v-if="node.comment.dislikes">{{ node.comment.dislikes }}</span>
-            </button>
-            <button
-              type="button"
-              class="comments__reply-btn"
-              aria-label="回覆"
-              @click="startReply(node)"
-            >
-              回覆
-            </button>
-            <button
-              v-if="node.comment.canDelete"
-              type="button"
-              class="comments__delete-btn"
-              aria-label="刪除留言"
-              @click="deleteComment(node.comment.id)"
-            >
-              刪除
-            </button>
-          </div>
-        </li>
-        <!-- 回覆輸入框 -->
-        <li
-          v-if="replyingToRootId === group.root.comment.id && !group.root.comment.isDeleted"
+          v-if="replyingToId === group.root.comment.id"
           class="comments__reply-form"
-          :style="{ '--depth': replyTargetDepth + 1 }"
+          :style="{ '--depth': 1 }"
         >
           <input
+            :ref="(el) => { if (el) (el as HTMLInputElement).focus() }"
             v-model="replyInput"
             type="text"
             class="comments__input"
@@ -255,6 +215,83 @@ function formatDate(isoString: string): string {
             </button>
           </div>
         </li>
+        <!-- 所有子孫留言（深度 >= 1），每則後緊接其回覆輸入框 -->
+        <template v-for="node in group.descendants" :key="node.comment.id">
+          <li
+            v-show="isExpanded(group.root.comment.id)"
+            class="comments__item comments__item--reply"
+            :style="{ '--depth': node.depth }"
+          >
+            <div class="comments__item-top">
+              <div class="comments__user-row">
+                <span class="comments__avatar">👤</span>
+                <span class="comments__user">{{ displayUserLabel(node.comment) }}</span>
+              </div>
+              <span class="comments__date">({{ formatDate(node.comment.date) }})</span>
+            </div>
+            <p class="comments__content">
+              {{ node.comment.content }}
+            </p>
+            <div v-if="!node.comment.isDeleted" class="comments__actions">
+              <button type="button" class="comments__vote-btn" aria-label="按讚">
+                👍 <span v-if="node.comment.likes">{{ node.comment.likes }}</span>
+              </button>
+              <button type="button" class="comments__vote-btn" aria-label="倒讚">
+                👎 <span v-if="node.comment.dislikes">{{ node.comment.dislikes }}</span>
+              </button>
+              <button
+                type="button"
+                class="comments__reply-btn"
+                aria-label="回覆"
+                @click="startReply(node)"
+              >
+                回覆
+              </button>
+              <button
+                v-if="node.comment.canDelete"
+                type="button"
+                class="comments__delete-btn"
+                aria-label="刪除留言"
+                @click="deleteComment(node.comment.id)"
+              >
+                刪除
+              </button>
+            </div>
+          </li>
+          <!-- 回覆此子孫留言的輸入框（緊接於該留言下方） -->
+          <li
+            v-if="replyingToId === node.comment.id"
+            class="comments__reply-form"
+            :style="{ '--depth': node.depth + 1 }"
+          >
+            <input
+              :ref="(el) => { if (el) (el as HTMLInputElement).focus() }"
+              v-model="replyInput"
+              type="text"
+              class="comments__input"
+              placeholder="回覆此留言..."
+              @keydown.enter="submitReply"
+              @keydown.esc="cancelReply"
+            >
+            <div class="comments__reply-actions">
+              <button
+                type="button"
+                class="comments__submit-btn"
+                :disabled="!replyInput.trim()"
+                @click="submitReply"
+              >
+                發布
+              </button>
+              <button
+                type="button"
+                class="comments__cancel-btn"
+                @click="cancelReply"
+              >
+                取消
+              </button>
+            </div>
+          </li>
+        </template>
       </template>
     </ul>
 
