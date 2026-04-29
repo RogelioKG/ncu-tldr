@@ -150,6 +150,7 @@ function handleSubmitReview(payload: {
             @submit-review="handleSubmitReview"
           />
           <CourseComments
+            :course-id="course.id"
             :comments="comments ?? []"
             @reply="handleReply"
             @delete-comment="handleDeleteComment"

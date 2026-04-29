@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.comment import Comment
+from app.models.comment_reaction import CommentReaction
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +51,19 @@ class CommentRepository:
         return comment
 
     async def react(
-        self, db: AsyncSession, comment_id: int, reaction: str
-    ) -> Comment | None:
-        logger.debug("React to comment comment_id=%s reaction=%s", comment_id, reaction)
+        self,
+        db: AsyncSession,
+        *,
+        comment_id: int,
+        user_id: uuid.UUID,
+        reaction: str,
+    ) -> tuple[Comment, str | None] | None:
+        logger.debug(
+            "React to comment comment_id=%s user_id=%s reaction=%s",
+            comment_id,
+            user_id,
+            reaction,
+        )
         result = await db.execute(
             select(Comment).where(
                 Comment.id == comment_id,
@@ -63,18 +74,70 @@ class CommentRepository:
         if comment is None:
             logger.warning("React target comment not found comment_id=%s", comment_id)
             return None
-        if reaction == "like":
-            comment.likes += 1
+
+        existing_result = await db.execute(
+            select(CommentReaction).where(
+                CommentReaction.user_id == user_id,
+                CommentReaction.comment_id == comment_id,
+            )
+        )
+        existing = existing_result.scalar_one_or_none()
+
+        if existing is not None:
+            if existing.reaction == reaction:
+                await db.delete(existing)
+                if reaction == "like":
+                    comment.likes = max(0, comment.likes - 1)
+                else:
+                    comment.dislikes = max(0, comment.dislikes - 1)
+                user_reaction = None
+            else:
+                if reaction == "like":
+                    comment.likes += 1
+                    comment.dislikes = max(0, comment.dislikes - 1)
+                else:
+                    comment.dislikes += 1
+                    comment.likes = max(0, comment.likes - 1)
+                existing.reaction = reaction
+                user_reaction = reaction
         else:
-            comment.dislikes += 1
+            db.add(
+                CommentReaction(
+                    user_id=user_id, comment_id=comment_id, reaction=reaction
+                )
+            )
+            if reaction == "like":
+                comment.likes += 1
+            else:
+                comment.dislikes += 1
+            user_reaction = reaction
+
         await db.flush()
         logger.debug(
-            "Comment reaction updated comment_id=%s likes=%s dislikes=%s",
+            "Comment reaction updated comment_id=%s likes=%s dislikes=%s user_reaction=%s",
             comment.id,
             comment.likes,
             comment.dislikes,
+            user_reaction,
         )
-        return comment
+        return comment, user_reaction
+
+    async def get_user_reactions(
+        self,
+        db: AsyncSession,
+        *,
+        user_id: uuid.UUID,
+        comment_ids: list[int],
+    ) -> dict[int, str]:
+        if not comment_ids:
+            return {}
+        result = await db.execute(
+            select(CommentReaction).where(
+                CommentReaction.user_id == user_id,
+                CommentReaction.comment_id.in_(comment_ids),
+            )
+        )
+        return {r.comment_id: r.reaction for r in result.scalars().all()}
 
     async def get_active_by_id(
         self,

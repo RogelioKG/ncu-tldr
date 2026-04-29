@@ -64,6 +64,8 @@ export interface CourseComment {
   likes: number
   /** 倒讚數 */
   dislikes: number
+  /** 目前登入者對此留言的反應 */
+  userReaction?: 'like' | 'dislike' | null
   /** 回覆對象 ID（undefined/null = 根留言） */
   parentId?: number
   /** 是否為軟刪除內容 */

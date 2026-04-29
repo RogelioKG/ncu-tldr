@@ -1,5 +1,6 @@
 from app.models.college import College
 from app.models.comment import Comment
+from app.models.comment_reaction import CommentReaction
 from app.models.email_verification_token import EmailVerificationToken
 from app.models.course import Course
 from app.models.course_college import CourseCollege
@@ -17,6 +18,7 @@ from app.models.wishlist import WishlistVote
 __all__ = [
     "College",
     "Comment",
+    "CommentReaction",
     "EmailVerificationToken",
     "Course",
     "CourseCollege",

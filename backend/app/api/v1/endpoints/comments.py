@@ -46,11 +46,17 @@ async def react_to_comment(
     comment_id: int,
     data: ReactionRequest,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     logger.debug(
-        "React comment endpoint course_id=%s comment_id=%s", course_id, comment_id
+        "React comment endpoint course_id=%s comment_id=%s user_id=%s",
+        course_id,
+        comment_id,
+        current_user.id,
     )
-    return await comment_service.react_to_comment(db, comment_id, data.reaction)
+    return await comment_service.react_to_comment(
+        db, comment_id, current_user.id, data.reaction
+    )
 
 
 @router.delete(

@@ -10,3 +10,4 @@ class ReactionRequest(BaseModel):
 class ReactionResponse(BaseModel):
     likes: int
     dislikes: int
+    user_reaction: Literal["like", "dislike"] | None = None

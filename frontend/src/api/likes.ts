@@ -1,35 +1,31 @@
-// Stub — waiting for backend to implement like/dislike endpoints.
-// See docs/backend-requirements.md for the expected API contract.
+import { request } from './client'
 
 export type ReactionType = 'like' | 'dislike'
 
 export interface ReactionResult {
   likes: number
   dislikes: number
+  userReaction: 'like' | 'dislike' | null
 }
 
-/**
- * Like or dislike a review.
- * @throws {Error} always — endpoint not yet implemented on backend.
- */
 export async function reactToReview(
   _courseId: number,
   _reviewId: number,
   _reaction: ReactionType,
-  _token?: string,
 ): Promise<ReactionResult> {
-  throw new Error('Like/dislike API not yet implemented. See docs/backend-requirements.md.')
+  throw new Error('Like/dislike for reviews not yet implemented.')
 }
 
-/**
- * Like or dislike a comment.
- * @throws {Error} always — endpoint not yet implemented on backend.
- */
 export async function reactToComment(
-  _courseId: number,
-  _commentId: number,
-  _reaction: ReactionType,
-  _token?: string,
+  courseId: number,
+  commentId: number,
+  reaction: ReactionType,
 ): Promise<ReactionResult> {
-  throw new Error('Like/dislike API not yet implemented. See docs/backend-requirements.md.')
+  return request<ReactionResult>(
+    `/api/v1/courses/${courseId}/comments/${commentId}/react`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ reaction }),
+    },
+  )
 }

@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import type { CommentTreeNode, CourseComment } from '@/types'
 import { computed, ref } from 'vue'
+import { reactToComment } from '@/api/likes'
 import { buildCommentTree, flattenDescendants } from '@/types'
 
 const props = defineProps<{
+  courseId: number
   comments: CourseComment[]
 }>()
 
@@ -26,6 +28,61 @@ const replyingToRootId = ref<number | null>(null)
 const replyTargetDepth = ref(0)
 const replyInput = ref('')
 const expandedRoots = ref<Set<number>>(new Set())
+interface VoteState {
+  likes: number
+  dislikes: number
+  userReaction: 'like' | 'dislike' | null
+}
+
+const localVotes = ref(new Map<number, VoteState>())
+
+function getVotes(comment: CourseComment): VoteState {
+  return localVotes.value.get(comment.id) ?? {
+    likes: comment.likes,
+    dislikes: comment.dislikes,
+    userReaction: comment.userReaction ?? null,
+  }
+}
+
+async function reactComment(comment: CourseComment, reaction: 'like' | 'dislike') {
+  const current = getVotes(comment)
+  const optimistic: VoteState = { ...current }
+
+  if (current.userReaction === reaction) {
+    if (reaction === 'like')
+      optimistic.likes = Math.max(0, optimistic.likes - 1)
+    else
+      optimistic.dislikes = Math.max(0, optimistic.dislikes - 1)
+    optimistic.userReaction = null
+  }
+  else {
+    if (current.userReaction === 'like')
+      optimistic.likes = Math.max(0, optimistic.likes - 1)
+    else if (current.userReaction === 'dislike')
+      optimistic.dislikes = Math.max(0, optimistic.dislikes - 1)
+    if (reaction === 'like')
+      optimistic.likes += 1
+    else
+      optimistic.dislikes += 1
+    optimistic.userReaction = reaction
+  }
+
+  const next = new Map(localVotes.value)
+  next.set(comment.id, optimistic)
+  localVotes.value = next
+
+  try {
+    const result = await reactToComment(props.courseId, comment.id, reaction)
+    const updated = new Map(localVotes.value)
+    updated.set(comment.id, { ...result, userReaction: result.userReaction })
+    localVotes.value = updated
+  }
+  catch {
+    const rolled = new Map(localVotes.value)
+    rolled.set(comment.id, current)
+    localVotes.value = rolled
+  }
+}
 
 function toggleReplies(rootId: number) {
   const collapsing = isExpanded(rootId)
@@ -149,11 +206,23 @@ function formatDate(isoString: string): string {
             {{ group.root.comment.content }}
           </p>
           <div v-if="!group.root.comment.isDeleted" class="comments__actions">
-            <button type="button" class="comments__vote-btn" aria-label="按讚" disabled title="即將推出">
-              👍 <span v-if="group.root.comment.likes">{{ group.root.comment.likes }}</span>
+            <button
+              type="button"
+              class="comments__vote-btn"
+              :class="{ 'comments__vote-btn--active': getVotes(group.root.comment).userReaction === 'like' }"
+              aria-label="按讚"
+              @click="reactComment(group.root.comment, 'like')"
+            >
+              👍 <span v-if="getVotes(group.root.comment).likes">{{ getVotes(group.root.comment).likes }}</span>
             </button>
-            <button type="button" class="comments__vote-btn" aria-label="倒讚" disabled title="即將推出">
-              👎 <span v-if="group.root.comment.dislikes">{{ group.root.comment.dislikes }}</span>
+            <button
+              type="button"
+              class="comments__vote-btn"
+              :class="{ 'comments__vote-btn--active': getVotes(group.root.comment).userReaction === 'dislike' }"
+              aria-label="倒讚"
+              @click="reactComment(group.root.comment, 'dislike')"
+            >
+              👎 <span v-if="getVotes(group.root.comment).dislikes">{{ getVotes(group.root.comment).dislikes }}</span>
             </button>
             <button
               type="button"
@@ -233,11 +302,23 @@ function formatDate(isoString: string): string {
               {{ node.comment.content }}
             </p>
             <div v-if="!node.comment.isDeleted" class="comments__actions">
-              <button type="button" class="comments__vote-btn" aria-label="按讚">
-                👍 <span v-if="node.comment.likes">{{ node.comment.likes }}</span>
+              <button
+                type="button"
+                class="comments__vote-btn"
+                :class="{ 'comments__vote-btn--active': getVotes(node.comment).userReaction === 'like' }"
+                aria-label="按讚"
+                @click="reactComment(node.comment, 'like')"
+              >
+                👍 <span v-if="getVotes(node.comment).likes">{{ getVotes(node.comment).likes }}</span>
               </button>
-              <button type="button" class="comments__vote-btn" aria-label="倒讚">
-                👎 <span v-if="node.comment.dislikes">{{ node.comment.dislikes }}</span>
+              <button
+                type="button"
+                class="comments__vote-btn"
+                :class="{ 'comments__vote-btn--active': getVotes(node.comment).userReaction === 'dislike' }"
+                aria-label="倒讚"
+                @click="reactComment(node.comment, 'dislike')"
+              >
+                👎 <span v-if="getVotes(node.comment).dislikes">{{ getVotes(node.comment).dislikes }}</span>
               </button>
               <button
                 type="button"
@@ -483,6 +564,11 @@ function formatDate(isoString: string): string {
 .comments__vote-btn:hover,
 .comments__reply-btn:hover,
 .comments__delete-btn:hover {
+  background: var(--color-accent-primary);
+  color: white;
+}
+
+.comments__vote-btn--active {
   background: var(--color-accent-primary);
   color: white;
 }
