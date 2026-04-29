@@ -103,6 +103,10 @@ function handleOverlayClick(event: MouseEvent) {
     emit('close')
 }
 
+function closeErrorToast() {
+  showErrorToast.value = false
+}
+
 async function handleSubmit() {
   if (!validateAll())
     return
@@ -134,7 +138,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <ErrorToast :visible="showErrorToast" @close="showErrorToast = false" />
+  <ErrorToast :visible="showErrorToast" @close="closeErrorToast" />
   <Teleport to="body">
     <Transition name="wish-fade">
       <div v-if="true" class="wish-overlay" @click="handleOverlayClick">

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useFocusTrap } from '@vueuse/integrations/useFocusTrap'
-import { ref, watch } from 'vue'
+import { nextTick, onUnmounted, ref, watch } from 'vue'
 import sorryDolphin from '@/assets/sorry_dophin.png'
 
 const props = defineProps<{
@@ -14,36 +14,64 @@ const emit = defineEmits<{
 }>()
 
 const dialogRef = ref<HTMLElement | null>(null)
-const { activate, deactivate } = useFocusTrap(dialogRef)
+const { activate, deactivate } = useFocusTrap(dialogRef, { allowOutsideClick: true })
 
-watch(() => props.visible, (visible) => {
-  if (visible)
-    activate()
-  else
-    deactivate()
-})
-
-function handleOverlayClick(event: MouseEvent) {
-  if ((event.target as HTMLElement).classList.contains('error-overlay'))
-    emit('close')
+function closeToast() {
+  emit('close')
 }
+
+function safeActivateFocusTrap() {
+  try {
+    activate()
+  }
+  catch {
+    // Ignore trap activation failures and keep the toast usable.
+  }
+}
+
+function safeDeactivateFocusTrap() {
+  try {
+    deactivate()
+  }
+  catch {
+    // Ignore trap deactivation failures and keep close flow stable.
+  }
+}
+
+watch(
+  () => props.visible,
+  async (visible) => {
+    if (visible) {
+      await nextTick()
+      safeActivateFocusTrap()
+      return
+    }
+
+    safeDeactivateFocusTrap()
+  },
+  { flush: 'post' },
+)
+
+onUnmounted(() => {
+  safeDeactivateFocusTrap()
+})
 
 function handleReport() {
   // TODO: 未來會通知後台管理員此功能有問題，請檢查 log
-  emit('close')
+  closeToast()
 }
 </script>
 
 <template>
   <Teleport to="body">
     <Transition name="error-fade">
-      <div v-if="visible" class="error-overlay" @click="handleOverlayClick">
+      <div v-if="visible" class="error-overlay" @click.self="closeToast">
         <div ref="dialogRef" class="error-toast" role="alert" aria-label="錯誤訊息">
           <button
             class="error-toast__close"
             type="button"
             aria-label="關閉"
-            @click="emit('close')"
+            @click="closeToast"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
               <path d="M18 6L6 18M6 6l12 12" />

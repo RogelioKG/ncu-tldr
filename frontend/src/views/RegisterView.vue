@@ -54,6 +54,10 @@ async function handleSubmit() {
     showErrorToast.value = true
   }
 }
+
+function closeErrorToast() {
+  showErrorToast.value = false
+}
 </script>
 
 <template>
@@ -61,7 +65,7 @@ async function handleSubmit() {
     :visible="showErrorToast"
     :title="errorTitle"
     :message="errorMessage"
-    @close="showErrorToast = false"
+    @close="closeErrorToast"
   />
   <div class="auth-page">
     <div class="auth-card">

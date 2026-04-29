@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, reactive, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { resendVerification } from '@/api/auth'
 import { ApiError } from '@/api/client'
 import ErrorToast from '@/components/ErrorToast.vue'
+import { useErrorToast } from '@/composables/useErrorToast'
 import { useFormValidation } from '@/composables/useFormValidation'
 import { loginSchema } from '@/schemas'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -11,9 +12,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
 const router = useRouter()
 const authStore = useAuthStore()
 
-const showErrorToast = ref(false)
-const errorToastTitle = ref('')
-const errorToastMessage = ref('')
+const errorToast = reactive(useErrorToast())
 const showUnverified = ref(false)
 const unverifiedEmail = ref('')
 const RESEND_COUNTDOWN_SECONDS = 30
@@ -98,9 +97,7 @@ async function handleSubmit() {
     }
     else {
       const { title, message } = getLoginError(err)
-      errorToastTitle.value = title
-      errorToastMessage.value = message
-      showErrorToast.value = true
+      errorToast.show(title, message)
     }
   }
 }
@@ -123,10 +120,10 @@ async function handleResend() {
 
 <template>
   <ErrorToast
-    :visible="showErrorToast"
-    :title="errorToastTitle"
-    :message="errorToastMessage"
-    @close="showErrorToast = false"
+    :visible="errorToast.visible"
+    :title="errorToast.title"
+    :message="errorToast.message"
+    @close="errorToast.close"
   />
   <div class="auth-page">
     <div class="auth-card">
