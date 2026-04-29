@@ -2,7 +2,7 @@ import uuid
 import logging
 from datetime import datetime, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.refresh_token import RefreshToken
@@ -50,6 +50,18 @@ class RefreshTokenRepository:
         )
         await db.flush()
         logger.warning("All refresh tokens revoked user_id=%s", user_id)
+
+    async def delete_expired(self, db: AsyncSession) -> int:
+        result = await db.execute(
+            delete(RefreshToken).where(
+                RefreshToken.expires_at < datetime.now(timezone.utc)
+            )
+        )
+        await db.flush()
+        count = result.rowcount
+        if count:
+            logger.info("Deleted %d expired refresh tokens", count)
+        return count
 
 
 refresh_token_repo = RefreshTokenRepository()
