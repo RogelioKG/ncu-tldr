@@ -1,10 +1,11 @@
 import uuid
 
-import sqlalchemy as sa
-from sqlalchemy import CheckConstraint, ForeignKey, Index, String
+from sqlalchemy import Enum, ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
+
+REACTION_ENUM = Enum("like", "dislike", name="reaction_type", create_type=False)
 
 
 class CommentReaction(Base):
@@ -16,12 +17,6 @@ class CommentReaction(Base):
     comment_id: Mapped[int] = mapped_column(
         ForeignKey("comments.id", ondelete="CASCADE"), primary_key=True
     )
-    reaction: Mapped[str] = mapped_column(String(10), nullable=False)
+    reaction: Mapped[str] = mapped_column(REACTION_ENUM, nullable=False)
 
-    __table_args__ = (
-        CheckConstraint(
-            sa.text("reaction IN ('like', 'dislike')"),
-            name="ck_comment_reactions_reaction",
-        ),
-        Index("idx_comment_reactions_comment_id", "comment_id"),
-    )
+    __table_args__ = (Index("idx_comment_reactions_comment_id", "comment_id"),)

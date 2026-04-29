@@ -23,10 +23,10 @@ def upgrade() -> None:
         "comment_reactions",
         sa.Column("user_id", sa.UUID(), nullable=False),
         sa.Column("comment_id", sa.Integer(), nullable=False),
-        sa.Column("reaction", sa.String(10), nullable=False),
-        sa.CheckConstraint(
-            "reaction IN ('like', 'dislike')",
-            name="ck_comment_reactions_reaction",
+        sa.Column(
+            "reaction",
+            sa.Enum("like", "dislike", name="reaction_type"),
+            nullable=False,
         ),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["comment_id"], ["comments.id"], ondelete="CASCADE"),
@@ -44,3 +44,4 @@ def downgrade() -> None:
     """Downgrade schema."""
     op.drop_index("idx_comment_reactions_comment_id", table_name="comment_reactions")
     op.drop_table("comment_reactions")
+    op.execute(sa.text("DROP TYPE reaction_type"))
