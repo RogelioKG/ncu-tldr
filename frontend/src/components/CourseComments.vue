@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { CourseComment } from '@/types'
+import type { CommentTreeNode, CourseComment } from '@/types'
 import { computed, ref } from 'vue'
-import { buildCommentTree } from '@/types'
+import { buildCommentTree, flattenDescendants } from '@/types'
 
 const props = defineProps<{
   comments: CourseComment[]
@@ -13,11 +13,32 @@ const emit = defineEmits<{
   submitComment: [{ content: string }]
 }>()
 
+interface RenderGroup {
+  root: CommentTreeNode
+  descendants: CommentTreeNode[]
+}
+
 type SortMode = 'date' | 'popular'
 const sortMode = ref<SortMode>('date')
 const newComment = ref('')
 const replyingToId = ref<number | null>(null)
+const replyingToRootId = ref<number | null>(null)
+const replyTargetDepth = ref(0)
 const replyInput = ref('')
+const expandedRoots = ref<Set<number>>(new Set())
+
+function toggleReplies(rootId: number) {
+  const next = new Set(expandedRoots.value)
+  if (next.has(rootId))
+    next.delete(rootId)
+  else
+    next.add(rootId)
+  expandedRoots.value = next
+}
+
+function isExpanded(rootId: number): boolean {
+  return expandedRoots.value.has(rootId)
+}
 
 function sortByDate(a: CourseComment, b: CourseComment) {
   return b.date.localeCompare(a.date)
@@ -26,13 +47,9 @@ function sortByPopular(a: CourseComment, b: CourseComment) {
   return (b.likes - b.dislikes) - (a.likes - a.dislikes)
 }
 
-const commentTree = computed(() =>
-  buildCommentTree(
-    [...props.comments],
-    sortByDate,
-    sortByPopular,
-    sortMode.value,
-  ),
+const renderGroups = computed<RenderGroup[]>(() =>
+  buildCommentTree([...props.comments], sortByDate, sortByPopular, sortMode.value)
+    .map(root => ({ root, descendants: flattenDescendants(root) })),
 )
 
 function submitComment() {
@@ -42,13 +59,18 @@ function submitComment() {
   newComment.value = ''
 }
 
-function startReply(commentId: number) {
-  replyingToId.value = commentId
+function startReply(node: CommentTreeNode) {
+  replyingToId.value = node.comment.id
+  replyingToRootId.value = node.rootId
+  replyTargetDepth.value = node.depth
   replyInput.value = ''
+  if (node.depth > 0 && !isExpanded(node.rootId))
+    toggleReplies(node.rootId)
 }
 
 function cancelReply() {
   replyingToId.value = null
+  replyingToRootId.value = null
   replyInput.value = ''
 }
 
@@ -57,6 +79,7 @@ function submitReply() {
     return
   emit('reply', { parentId: replyingToId.value, content: replyInput.value.trim() })
   replyingToId.value = null
+  replyingToRootId.value = null
   replyInput.value = ''
 }
 
@@ -66,6 +89,17 @@ function deleteComment(commentId: number) {
 
 function displayUserLabel(comment: CourseComment): string {
   return comment.title ? `${comment.user}：${comment.title}` : comment.user
+}
+
+function formatDate(isoString: string): string {
+  const d = new Date(isoString)
+  if (Number.isNaN(d.getTime()))
+    return isoString
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${mm}/${dd} ${hh}:${min}`
 }
 </script>
 
@@ -97,84 +131,103 @@ function displayUserLabel(comment: CourseComment): string {
     </header>
 
     <!-- 留言列表（樹狀） -->
-    <ul v-if="commentTree.length" class="comments__list">
-      <template v-for="node in commentTree" :key="node.root.id">
+    <ul v-if="renderGroups.length" class="comments__list">
+      <template v-for="group in renderGroups" :key="group.root.comment.id">
         <!-- 根留言 -->
         <li class="comments__item">
           <div class="comments__item-top">
             <div class="comments__user-row">
               <span class="comments__avatar">👤</span>
-              <span class="comments__user">{{ displayUserLabel(node.root) }}</span>
+              <span class="comments__user">{{ displayUserLabel(group.root.comment) }}</span>
             </div>
-            <span class="comments__date">({{ node.root.date }})</span>
+            <span class="comments__date">({{ formatDate(group.root.comment.date) }})</span>
           </div>
           <p class="comments__content">
-            {{ node.root.content }}
+            {{ group.root.comment.content }}
           </p>
-          <div v-if="!node.root.isDeleted" class="comments__actions">
+          <div v-if="!group.root.comment.isDeleted" class="comments__actions">
             <button type="button" class="comments__vote-btn" aria-label="按讚" disabled title="即將推出">
-              👍 <span v-if="node.root.likes">{{ node.root.likes }}</span>
+              👍 <span v-if="group.root.comment.likes">{{ group.root.comment.likes }}</span>
             </button>
             <button type="button" class="comments__vote-btn" aria-label="倒讚" disabled title="即將推出">
-              👎 <span v-if="node.root.dislikes">{{ node.root.dislikes }}</span>
+              👎 <span v-if="group.root.comment.dislikes">{{ group.root.comment.dislikes }}</span>
             </button>
             <button
               type="button"
               class="comments__reply-btn"
               aria-label="回覆"
-              @click="startReply(node.root.id)"
+              @click="startReply(group.root)"
             >
               回覆
             </button>
             <button
-              v-if="node.root.canDelete"
+              v-if="group.root.comment.canDelete"
               type="button"
               class="comments__delete-btn"
               aria-label="刪除留言"
-              @click="deleteComment(node.root.id)"
+              @click="deleteComment(group.root.comment.id)"
             >
               刪除
             </button>
           </div>
+          <button
+            v-if="group.descendants.length > 0"
+            type="button"
+            class="comments__toggle-replies-btn"
+            @click="toggleReplies(group.root.comment.id)"
+          >
+            {{ isExpanded(group.root.comment.id) ? '收起所有回覆' : `展開所有回覆（${group.descendants.length}）` }}
+          </button>
         </li>
-        <!-- 回覆（同縮排） -->
+        <!-- 所有子孫留言（深度 >= 1） -->
         <li
-          v-for="reply in node.replies"
-          :key="reply.id"
+          v-for="node in group.descendants"
+          v-show="isExpanded(group.root.comment.id)"
+          :key="node.comment.id"
           class="comments__item comments__item--reply"
+          :style="{ '--depth': node.depth }"
         >
           <div class="comments__item-top">
             <div class="comments__user-row">
               <span class="comments__avatar">👤</span>
-              <span class="comments__user">{{ displayUserLabel(reply) }}</span>
+              <span class="comments__user">{{ displayUserLabel(node.comment) }}</span>
             </div>
-            <span class="comments__date">({{ reply.date }})</span>
+            <span class="comments__date">({{ formatDate(node.comment.date) }})</span>
           </div>
           <p class="comments__content">
-            {{ reply.content }}
+            {{ node.comment.content }}
           </p>
-          <div v-if="!reply.isDeleted" class="comments__actions">
+          <div v-if="!node.comment.isDeleted" class="comments__actions">
             <button type="button" class="comments__vote-btn" aria-label="按讚">
-              👍 <span v-if="reply.likes">{{ reply.likes }}</span>
+              👍 <span v-if="node.comment.likes">{{ node.comment.likes }}</span>
             </button>
             <button type="button" class="comments__vote-btn" aria-label="倒讚">
-              👎 <span v-if="reply.dislikes">{{ reply.dislikes }}</span>
+              👎 <span v-if="node.comment.dislikes">{{ node.comment.dislikes }}</span>
             </button>
             <button
-              v-if="reply.canDelete"
+              type="button"
+              class="comments__reply-btn"
+              aria-label="回覆"
+              @click="startReply(node)"
+            >
+              回覆
+            </button>
+            <button
+              v-if="node.comment.canDelete"
               type="button"
               class="comments__delete-btn"
               aria-label="刪除留言"
-              @click="deleteComment(reply.id)"
+              @click="deleteComment(node.comment.id)"
             >
               刪除
             </button>
           </div>
         </li>
-        <!-- 回覆輸入框（inline） -->
+        <!-- 回覆輸入框 -->
         <li
-          v-if="replyingToId === node.root.id && !node.root.isDeleted"
+          v-if="replyingToRootId === group.root.comment.id && !group.root.comment.isDeleted"
           class="comments__reply-form"
+          :style="{ '--depth': replyTargetDepth + 1 }"
         >
           <input
             v-model="replyInput"
@@ -303,11 +356,11 @@ function displayUserLabel(comment: CourseComment): string {
 }
 
 .comments__item--reply {
-  margin-left: var(--reply-indent, 2rem);
+  margin-left: calc(2rem * var(--depth, 1));
 }
 
 .comments__reply-form {
-  margin-left: var(--reply-indent, 2rem);
+  margin-left: calc(2rem * var(--depth, 1));
   padding: var(--spacing-sm);
   display: flex;
   flex-direction: column;
@@ -393,6 +446,25 @@ function displayUserLabel(comment: CourseComment): string {
 .comments__vote-btn:hover,
 .comments__reply-btn:hover,
 .comments__delete-btn:hover {
+  background: var(--color-accent-primary);
+  color: white;
+}
+
+.comments__toggle-replies-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: var(--spacing-xs);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  color: var(--color-accent-primary);
+  background: transparent;
+  border: 1px solid var(--color-accent-primary);
+  transition: all var(--transition-fast);
+}
+
+.comments__toggle-replies-btn:hover {
   background: var(--color-accent-primary);
   color: white;
 }

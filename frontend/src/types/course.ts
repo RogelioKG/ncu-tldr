@@ -75,11 +75,13 @@ export interface CourseComment {
 }
 
 export interface CommentTreeNode {
-  root: CourseComment
-  replies: CourseComment[]
+  comment: CourseComment
+  depth: number
+  rootId: number
+  children: CommentTreeNode[]
 }
 
-export { buildCommentTree } from '@/utils/commentTree'
+export { buildCommentTree, flattenDescendants } from '@/utils/commentTree'
 
 export interface Course {
   /** 課程唯一識別碼 */
