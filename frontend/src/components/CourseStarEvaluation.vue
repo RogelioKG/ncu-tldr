@@ -1,21 +1,12 @@
 <script setup lang="ts">
 import type { CourseRatings } from '@/types'
-import { computed } from 'vue'
 import StarRating from './StarRating.vue'
 
-const props = defineProps<{
+defineProps<{
   ratings: CourseRatings
 }>()
 
-function clampRating(value: number): number {
-  return Math.max(0, Math.min(5, value))
-}
-
-const overallRating = computed(() => {
-  const { gain, highScore, easiness, teacherStyle } = props.ratings
-  const weighted = gain * 0.35 + highScore * 0.2 + easiness * 0.15 + teacherStyle * 0.3
-  return Number(clampRating(weighted).toFixed(1))
-})
+const overallRating = 0
 </script>
 
 <template>
