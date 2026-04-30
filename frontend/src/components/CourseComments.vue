@@ -143,8 +143,36 @@ function submitReply() {
   replyInput.value = ''
 }
 
-function deleteComment(commentId: number) {
-  emit('deleteComment', { commentId })
+const deleteConfirmId = ref<number | null>(null)
+const deleteCountdown = ref(0)
+let deleteCountdownTimer: ReturnType<typeof setInterval> | null = null
+
+function confirmDelete(commentId: number) {
+  deleteConfirmId.value = commentId
+  deleteCountdown.value = 3
+  deleteCountdownTimer = setInterval(() => {
+    deleteCountdown.value -= 1
+    if (deleteCountdown.value <= 0) {
+      clearInterval(deleteCountdownTimer!)
+      deleteCountdownTimer = null
+    }
+  }, 1000)
+}
+
+function cancelDelete() {
+  if (deleteCountdownTimer) {
+    clearInterval(deleteCountdownTimer)
+    deleteCountdownTimer = null
+  }
+  deleteConfirmId.value = null
+  deleteCountdown.value = 0
+}
+
+function executeDelete() {
+  if (deleteConfirmId.value == null)
+    return
+  emit('deleteComment', { commentId: deleteConfirmId.value })
+  cancelDelete()
 }
 
 function displayUserLabel(comment: CourseComment): string {
@@ -237,7 +265,7 @@ function formatDate(isoString: string): string {
               type="button"
               class="comments__delete-btn"
               aria-label="刪除留言"
-              @click="deleteComment(group.root.comment.id)"
+              @click="confirmDelete(group.root.comment.id)"
             >
               刪除
             </button>
@@ -333,7 +361,7 @@ function formatDate(isoString: string): string {
                 type="button"
                 class="comments__delete-btn"
                 aria-label="刪除留言"
-                @click="deleteComment(node.comment.id)"
+                @click="confirmDelete(node.comment.id)"
               >
                 刪除
               </button>
@@ -399,6 +427,40 @@ function formatDate(isoString: string): string {
         發布
       </button>
     </div>
+
+    <!-- 刪除確認視窗 -->
+    <Teleport to="body">
+      <Transition name="confirm-fade">
+        <div
+          v-if="deleteConfirmId !== null"
+          class="delete-confirm-overlay"
+          @click.self="cancelDelete"
+        >
+          <div class="delete-confirm-dialog" role="dialog" aria-modal="true">
+            <p class="delete-confirm-text">
+              你確定要刪除留言嗎？ 保留下來也許對其他人有幫助哦！
+            </p>
+            <div class="delete-confirm-actions">
+              <button
+                type="button"
+                class="delete-confirm-delete-btn"
+                :disabled="deleteCountdown > 0"
+                @click="executeDelete"
+              >
+                {{ deleteCountdown > 0 ? `刪除（${deleteCountdown}）` : '刪除' }}
+              </button>
+              <button
+                type="button"
+                class="delete-confirm-cancel-btn"
+                @click="cancelDelete"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </section>
 </template>
 
@@ -666,5 +728,89 @@ function formatDate(isoString: string): string {
     align-items: flex-start;
     gap: 4px;
   }
+}
+
+.delete-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+}
+
+.delete-confirm-dialog {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-xl) var(--spacing-xl);
+  max-width: 360px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.delete-confirm-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  text-align: center;
+}
+
+.delete-confirm-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+}
+
+.delete-confirm-delete-btn {
+  padding: var(--spacing-sm) var(--spacing-xl);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: var(--color-background-alt);
+  border: 1px solid var(--color-text-muted);
+  transition: all var(--transition-fast);
+  min-width: 96px;
+}
+
+.delete-confirm-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.delete-confirm-delete-btn:not(:disabled):hover {
+  background: #e57373;
+  border-color: #e57373;
+  color: white;
+}
+
+.delete-confirm-cancel-btn {
+  padding: var(--spacing-sm) var(--spacing-xl);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: white;
+  background: var(--color-text-primary);
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.delete-confirm-cancel-btn:hover {
+  opacity: 0.85;
+}
+
+.confirm-fade-enter-active,
+.confirm-fade-leave-active {
+  transition: opacity var(--transition-fast);
+}
+
+.confirm-fade-enter-from,
+.confirm-fade-leave-to {
+  opacity: 0;
 }
 </style>
