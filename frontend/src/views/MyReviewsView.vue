@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import ReviewCard from '@/components/ReviewCard.vue'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useReviewStore } from '@/stores/useReviewStore'
 
@@ -41,29 +42,15 @@ async function handleDeleteReview(courseId: number | undefined, reviewId: number
       </p>
     </div>
 
-    <ul v-else class="my-reviews__list">
-      <li v-for="review in reviewStore.myReviews" :key="review.id" class="my-reviews__item">
-        <div class="my-reviews__item-top">
-          <p class="my-reviews__item-title">
-            {{ review.title }}
-          </p>
-          <span class="my-reviews__item-date">{{ review.date }}</span>
-        </div>
-        <p class="my-reviews__item-content">
-          {{ review.content }}
-        </p>
-        <div class="my-reviews__actions">
-          <button
-            v-if="review.canDelete"
-            type="button"
-            class="my-reviews__delete-btn"
-            @click="handleDeleteReview(review.courseId, review.id)"
-          >
-            刪除評價
-          </button>
-        </div>
-      </li>
-    </ul>
+    <div v-else class="my-reviews__list">
+      <ReviewCard
+        v-for="review in reviewStore.myReviews"
+        :key="review.id"
+        :review="review"
+        :show-delete="review.canDelete"
+        @delete="handleDeleteReview(review.courseId, $event.reviewId)"
+      />
+    </div>
   </section>
 </template>
 
@@ -88,54 +75,5 @@ async function handleDeleteReview(courseId: number | undefined, reviewId: number
 .my-reviews__list {
   display: grid;
   gap: var(--spacing-md);
-}
-
-.my-reviews__item {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.my-reviews__item-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-md);
-}
-
-.my-reviews__item-title {
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.my-reviews__item-date {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-}
-
-.my-reviews__item-content {
-  margin-top: var(--spacing-sm);
-  color: var(--color-text-secondary);
-}
-
-.my-reviews__actions {
-  margin-top: var(--spacing-md);
-  display: flex;
-  justify-content: flex-end;
-}
-
-.my-reviews__delete-btn {
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
-  background: var(--color-background-alt);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  transition: var(--transition-fast);
-}
-
-.my-reviews__delete-btn:hover {
-  background: #ffe8e8;
-  color: #b02222;
 }
 </style>

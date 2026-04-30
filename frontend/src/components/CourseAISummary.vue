@@ -10,6 +10,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
+  openReviews: []
   submitReview: [
     payload: {
       semester: string
@@ -52,9 +53,9 @@ function handleSubmitReview(payload: {
       <h3 class="ai-summary__title">
         AI 統整摘要
       </h3>
-      <p class="ai-summary__source">
-        以下統整來自 {{ summary.reviewCount }} 則評價
-      </p>
+      <button class="ai-summary__reviews-btn" type="button" @click="emit('openReviews')">
+        以下統整來自 {{ summary.reviewCount }} 則評價 →
+      </button>
       <button class="ai-summary__action-btn" type="button" @click="showReviewForm = true">
         撰寫評價
       </button>
@@ -158,10 +159,22 @@ function handleSubmitReview(payload: {
   color: var(--color-text-primary);
 }
 
-.ai-summary__source {
+.ai-summary__reviews-btn {
+  margin-top: 4px;
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
-  margin-top: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.ai-summary__reviews-btn:hover {
+  color: var(--color-accent-primary);
+  background: rgba(127, 169, 184, 0.1);
+  text-decoration: underline;
 }
 
 .ai-summary__action-btn {

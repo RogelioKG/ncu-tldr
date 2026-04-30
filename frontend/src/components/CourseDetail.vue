@@ -6,6 +6,7 @@ import CourseAISummary from '@/components/CourseAISummary.vue'
 import CourseBasicInfo from '@/components/CourseBasicInfo.vue'
 import CourseComments from '@/components/CourseComments.vue'
 import CourseStarEvaluation from '@/components/CourseStarEvaluation.vue'
+import ReviewsPanel from '@/components/ReviewsPanel.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import TimeSlotButton from '@/components/TimeSlotButton.vue'
 import TimeSlotPanel from '@/components/TimeSlotPanel.vue'
@@ -44,6 +45,7 @@ const { isSaved, toggleSave } = useSavedCourses()
 
 const saved = computed(() => isSaved(props.course.id))
 const showSlotPanel = ref(false)
+const showReviewsPanel = ref(false)
 const hasActiveSlots = computed(() => courseStore.selectedSlots.length > 0)
 
 function handleToggleSave() {
@@ -147,6 +149,7 @@ function handleSubmitReview(payload: {
           <CourseAISummary
             :summary="course.summary"
             :course-name="course.name"
+            @open-reviews="showReviewsPanel = true"
             @submit-review="handleSubmitReview"
           />
           <CourseComments
@@ -159,6 +162,12 @@ function handleSubmitReview(payload: {
         </div>
       </div>
     </main>
+    <ReviewsPanel
+      :visible="showReviewsPanel"
+      :reviews="reviews ?? []"
+      :course-id="course.id"
+      @close="showReviewsPanel = false"
+    />
   </div>
 </template>
 
